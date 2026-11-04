@@ -28,15 +28,20 @@ export default function Spinnenweb({
   onKies,
   onKiesDomein,
 }: Props) {
-  const { domeinKnopen, posities, takken } = useMemo(
+  const { domeinKnopen, knopen, takken } = useMemo(
     () => berekenWeb(domeinen, normen, relaties),
     [domeinen, normen, relaties]
   );
   const perId = useMemo(() => Object.fromEntries(normen.map((n) => [n.id, n])), [normen]);
 
   const domeinActief = (id: string) => actiefDomein === null || actiefDomein === id;
-  const normActief = (n: Norm) =>
-    zichtbaar(n) && (actiefDomein === null || n.hoofddomein_id === actiefDomein || n.extra_domein_ids.includes(actiefDomein));
+  const normActief = (n: Norm, takDomein?: string) =>
+    zichtbaar(n) &&
+    (actiefDomein === null ||
+      takDomein === actiefDomein ||
+      n.hoofddomein_id === actiefDomein ||
+      n.extra_domein_ids.includes(actiefDomein));
+  const takDomeinVan = useMemo(() => new Map(knopen.map((k) => [k.sleutel, k.takDomein])), [knopen]);
 
   return (
     <div className="web">
@@ -67,7 +72,7 @@ export default function Spinnenweb({
               stroke={NIVEAU_KLEUR[n.niveau]}
               strokeWidth={t.soort === 'domein' ? 1.8 : 2.2}
               strokeDasharray={n.gebruikt_iso3166 ? undefined : '6 5'}
-              opacity={normActief(n) ? 1 : 0.12}
+              opacity={normActief(n, takDomeinVan.get(t.sleutel)) ? (t.kopie ? 0.6 : 1) : 0.12}
             />
           );
         })}
@@ -98,21 +103,21 @@ export default function Spinnenweb({
         </button>
       ))}
 
-      {normen.map((n) => {
-        const p = posities[n.id];
-        if (!p) return null;
+      {knopen.map((k) => {
+        const n = perId[k.normId];
+        if (!n) return null;
         const kleur = NIVEAU_KLEUR[n.niveau];
         const gekozen = n.id === geselecteerd;
         const klassen = ['knoop-stip', n.formeel ? '' : 'informeel', n.gebruikt_iso3166 ? '' : 'indirect'].join(' ').trim();
         return (
           <button
-            key={n.id}
+            key={k.sleutel}
             type="button"
-            className="knoop"
+            className={k.kopie ? 'knoop kopie' : 'knoop'}
             aria-pressed={gekozen}
-            aria-label={`${n.code} – ${n.titel}`}
+            aria-label={`${n.code} – ${n.titel}${k.kopie ? ' (verwijzing; hoofddomein elders)' : ''}`}
             onClick={() => onKies(n.id)}
-            style={{ left: pct(p.x, WEB_B), top: pct(p.y, WEB_H), opacity: normActief(n) ? 1 : 0.15 }}
+            style={{ left: pct(k.x, WEB_B), top: pct(k.y, WEB_H), opacity: normActief(n, k.takDomein) ? 1 : 0.15 }}
           >
             <span className={klassen} style={{ borderColor: kleur, background: gekozen ? kleur : '#fff' }} />
             <span className="knoop-label">{n.code}</span>
