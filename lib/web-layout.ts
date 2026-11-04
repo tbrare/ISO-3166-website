@@ -47,9 +47,22 @@ export interface DomeinKnoop {
 
 export interface Tak {
   id: string;
+  /** Sleutel van de knoop waar de tak naartoe loopt */
+  sleutel: string;
   normId: string;
   d: string;
   soort: 'domein' | 'norm';
+  kopie: boolean;
+}
+
+/** Een plek waar een norm in het web staat. Een norm kan twee keer voorkomen: in zijn eigen domein en als verwijzing. */
+export interface Knoop {
+  sleutel: string;
+  normId: string;
+  kopie: boolean;
+  takDomein: string;
+  x: number;
+  y: number;
 }
 
 interface Doos {
@@ -78,19 +91,34 @@ function labelMaat(n: Norm) {
   return { b: Math.max(code, subB), h: STIP + 4 + CODE_REGEL + 2 + regels * SUB_REGEL + 6, boven: STIP / 2 + 2 };
 }
 
-/** Bepaalt per norm de norm waarin hij in het verlengde ligt. Kringverwijzingen worden doorbroken. */
+/**
+ * Bepaalt per norm de norm waarnaar hij (als eerste) verwijst.
+ * - Zelfde hoofddomein: de norm hangt alleen in het verlengde van die norm (boomOuder).
+ * - Ander hoofddomein: de norm staat in zijn eigen domein én als verwijzing bij die norm (kopieOuder).
+ */
 function bepaalOuders(normen: Norm[], relaties: Relatie[], domeinIds: Set<string>) {
   const perId = new Map(normen.map((n) => [n.id, n]));
-  const ouder = new Map<string, string>();
+  const eerste = new Map<string, string>();
   for (const r of relaties) {
     if (r.van_norm_id === r.naar_norm_id) continue;
     if (!perId.has(r.van_norm_id) || !perId.has(r.naar_norm_id)) continue;
-    if (!ouder.has(r.van_norm_id)) ouder.set(r.van_norm_id, r.naar_norm_id);
+    if (!eerste.has(r.van_norm_id)) eerste.set(r.van_norm_id, r.naar_norm_id);
   }
+  const geldigDomein = (n?: Norm) => !!n?.hoofddomein_id && domeinIds.has(n.hoofddomein_id);
+
+  const boomOuder = new Map<string, string>();
+  const kopieOuder = new Map<string, string>();
+  for (const [van, naar] of eerste) {
+    const a = perId.get(van);
+    const b = perId.get(naar);
+    if (geldigDomein(a) && geldigDomein(b) && a!.hoofddomein_id !== b!.hoofddomein_id) kopieOuder.set(van, naar);
+    else boomOuder.set(van, naar);
+  }
+  // Kringen doorbreken en ketens die nergens in het web uitkomen loskoppelen
   for (let ronde = 0; ronde < 3; ronde++) {
-    for (const id of [...ouder.keys()]) {
+    for (const id of [...boomOuder.keys()]) {
       const gezien = new Set([id]);
-      let huidig = ouder.get(id);
+      let huidig = boomOuder.get(id);
       let wortel = id;
       let kring = false;
       while (huidig) {
@@ -100,13 +128,12 @@ function bepaalOuders(normen: Norm[], relaties: Relatie[], domeinIds: Set<string
         }
         gezien.add(huidig);
         wortel = huidig;
-        huidig = ouder.get(huidig);
+        huidig = boomOuder.get(huidig);
       }
-      const wortelDomein = perId.get(wortel)?.hoofddomein_id;
-      if (kring || !wortelDomein || !domeinIds.has(wortelDomein)) ouder.delete(id);
+      if (kring || !geldigDomein(perId.get(wortel))) boomOuder.delete(id);
     }
   }
-  return ouder;
+  return { boomOuder, kopieOuder };
 }
 
 /** Schuift overlappende labels uit elkaar. Domeinlabels en het midden blijven staan. */
@@ -165,49 +192,61 @@ function spreid(dozen: Doos[]) {
 export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie[]) {
   const gesorteerd = [...domeinen].sort((a, b) => a.volgorde - b.volgorde);
   const domeinIds = new Set(gesorteerd.map((d) => d.id));
-  const ouder = bepaalOuders(normen, relaties, domeinIds);
+  const { boomOuder, kopieOuder } = bepaalOuders(normen, relaties, domeinIds);
+  const perId = new Map(normen.map((n) => [n.id, n]));
 
   const sorteer = (a: Norm, b: Norm) =>
     NIVEAU_VOLGORDE[a.niveau] - NIVEAU_VOLGORDE[b.niveau] || a.code.localeCompare(b.code);
 
-  const kinderen = new Map<string, Norm[]>();
-  for (const n of normen) {
-    const o = ouder.get(n.id);
-    if (o) kinderen.set(o, [...(kinderen.get(o) ?? []), n]);
+  // Kinderen per norm: eerst echte vervolgnormen, daarna verwijzingen uit andere domeinen
+  interface Kind {
+    norm: Norm;
+    kopie: boolean;
   }
-  for (const lijst of kinderen.values()) lijst.sort(sorteer);
+  const kinderen = new Map<string, Kind[]>();
+  const voegToe = (ouderId: string, norm: Norm, kopie: boolean) =>
+    kinderen.set(ouderId, [...(kinderen.get(ouderId) ?? []), { norm, kopie }]);
+  for (const n of normen) {
+    const b = boomOuder.get(n.id);
+    if (b) voegToe(b, n, false);
+    const k = kopieOuder.get(n.id);
+    if (k) voegToe(k, n, true);
+  }
+  for (const lijst of kinderen.values()) lijst.sort((a, b) => Number(a.kopie) - Number(b.kopie) || sorteer(a.norm, b.norm));
 
-  const bladen = (id: string): number => {
-    const k = kinderen.get(id) ?? [];
-    return k.length === 0 ? 1 : k.reduce((som, n) => som + bladen(n.id), 0);
+  const bladen = (kind: Kind): number => {
+    if (kind.kopie) return 1;
+    const k = kinderen.get(kind.norm.id) ?? [];
+    return k.length === 0 ? 1 : k.reduce((som, x) => som + bladen(x), 0);
   };
-  const tel = (id: string): number => 1 + (kinderen.get(id) ?? []).reduce((som, n) => som + tel(n.id), 0);
+
+  interface DomeinInfo {
+    id: string;
+    punt: Punt;
+    hoek: number;
+    afstand: number;
+    straal: number;
+  }
 
   const domeinKnopen: DomeinKnoop[] = [];
-  const posities: Record<string, Punt> = {};
-  // Voor het tekenen van de lijnen: waar hangt elke norm aan?
-  const ophanging: Record<string, { domein?: { punt: Punt; hoek: number; afstand: number; straal: number }; ouderId?: string }> = {};
+  const knopen: Knoop[] = [];
+  const ophanging = new Map<string, { domein?: DomeinInfo; ouderSleutel?: string }>();
   const aantal = gesorteerd.length || 1;
   const sector = (2 * Math.PI) / aantal;
 
-  const plaats = (
-    groep: Norm[],
-    start: number,
-    breedte: number,
-    diepte: number,
-    ouderId: string | null,
-    domein: { punt: Punt; hoek: number; afstand: number; straal: number }
-  ) => {
-    const totaal = groep.reduce((som, n) => som + bladen(n.id), 0) || 1;
+  const plaats = (groep: Kind[], start: number, breedte: number, diepte: number, ouderSleutel: string | null, domein: DomeinInfo) => {
+    const totaal = groep.reduce((som, k) => som + bladen(k), 0) || 1;
     let a = start;
     const basis = domein.straal + diepte * STAP;
-    groep.forEach((norm) => {
-      const w = (breedte * bladen(norm.id)) / totaal;
-      posities[norm.id] = opStraal(a + w / 2, basis);
-      ophanging[norm.id] = ouderId ? { ouderId } : { domein };
-      plaats(kinderen.get(norm.id) ?? [], a, w, diepte + 1, norm.id, domein);
+    for (const kind of groep) {
+      const w = (breedte * bladen(kind)) / totaal;
+      const p = opStraal(a + w / 2, basis);
+      const sleutel = kind.kopie ? `${kind.norm.id}@${ouderSleutel}` : kind.norm.id;
+      knopen.push({ sleutel, normId: kind.norm.id, kopie: kind.kopie, takDomein: domein.id, x: p.x, y: p.y });
+      ophanging.set(sleutel, ouderSleutel ? { ouderSleutel } : { domein });
+      if (!kind.kopie) plaats(kinderen.get(kind.norm.id) ?? [], a, w, diepte + 1, sleutel, domein);
       a += w;
-    });
+    }
   };
 
   const vasteDozen: Doos[] = [{ id: '#midden', x: CX, y: CY, b: 2 * KERN, h: 2 * KERN, boven: KERN, vast: true }];
@@ -219,34 +258,43 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
     const totRand = Math.min(c > 1e-6 ? DOMEIN_B / 2 / c : Infinity, s > 1e-6 ? DOMEIN_H / 2 / s : Infinity);
     const afstand = KERN + GAT + totRand;
     const punt = opStraal(hoek, afstand);
-    const wortels = normen.filter((n) => n.hoofddomein_id === d.id && !ouder.has(n.id)).sort(sorteer);
-    domeinKnopen.push({ id: d.id, naam: d.naam, punt, aantal: wortels.reduce((som, n) => som + tel(n.id), 0) });
+    const wortels = normen
+      .filter((n) => n.hoofddomein_id === d.id && !boomOuder.has(n.id))
+      .sort(sorteer)
+      .map((norm) => ({ norm, kopie: false }));
+    domeinKnopen.push({ id: d.id, naam: d.naam, punt, aantal: normen.filter((n) => n.hoofddomein_id === d.id).length });
     vasteDozen.push({ id: `#${d.id}`, x: punt.x, y: punt.y, b: DOMEIN_B, h: DOMEIN_H + 10, boven: DOMEIN_H / 2 + 10, vast: true });
     const bruikbaar = sector * 0.86;
-    plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, null, { punt, hoek, afstand, straal: afstand + totRand + RUIMTE_NORM });
+    plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, null, { id: d.id, punt, hoek, afstand, straal: afstand + totRand + RUIMTE_NORM });
   });
 
   // Overlap wegwerken
-  const perId = new Map(normen.map((n) => [n.id, n]));
-  const normDozen: Doos[] = Object.entries(posities).map(([id, p]) => ({ id, x: p.x, y: p.y, vast: false, ...labelMaat(perId.get(id)!) }));
+  const normDozen: Doos[] = knopen.map((k) => ({ id: k.sleutel, x: k.x, y: k.y, vast: false, ...labelMaat(perId.get(k.normId)!) }));
   spreid([...vasteDozen, ...normDozen]);
-  for (const d of normDozen) posities[d.id] = { x: d.x, y: d.y };
+  const posities = new Map<string, Punt>();
+  normDozen.forEach((d, i) => {
+    knopen[i].x = d.x;
+    knopen[i].y = d.y;
+    posities.set(d.id, { x: d.x, y: d.y });
+  });
 
   // Lijnen tekenen vanaf de definitieve posities
   const takken: Tak[] = [];
-  for (const [id, h] of Object.entries(ophanging)) {
-    const p = posities[id];
+  for (const k of knopen) {
+    const h = ophanging.get(k.sleutel);
+    if (!h) continue;
     if (h.domein) {
       const c = opStraal(h.domein.hoek, (h.domein.afstand + h.domein.straal) / 2);
       const v = h.domein.punt;
-      takken.push({ id: `d-${id}`, normId: id, soort: 'domein', d: `M ${f(v.x)} ${f(v.y)} Q ${f(c.x)} ${f(c.y)} ${f(p.x)} ${f(p.y)}` });
-    } else if (h.ouderId && posities[h.ouderId]) {
-      const v = posities[h.ouderId];
-      takken.push({ id: `n-${id}`, normId: id, soort: 'norm', d: `M ${f(v.x)} ${f(v.y)} L ${f(p.x)} ${f(p.y)}` });
+      takken.push({ id: `d-${k.sleutel}`, sleutel: k.sleutel, normId: k.normId, soort: 'domein', kopie: k.kopie, d: `M ${f(v.x)} ${f(v.y)} Q ${f(c.x)} ${f(c.y)} ${f(k.x)} ${f(k.y)}` });
+    } else if (h.ouderSleutel) {
+      const v = posities.get(h.ouderSleutel);
+      if (!v) continue;
+      takken.push({ id: `n-${k.sleutel}`, sleutel: k.sleutel, normId: k.normId, soort: 'norm', kopie: k.kopie, d: `M ${f(v.x)} ${f(v.y)} L ${f(k.x)} ${f(k.y)}` });
     }
   }
 
-  return { domeinKnopen, posities, takken };
+  return { domeinKnopen, knopen, takken };
 }
 
 export const MIDDEN: Punt = { x: CX, y: CY };
