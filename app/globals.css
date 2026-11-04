@@ -72,6 +72,9 @@ h1, h2, h3 { line-height: 1.2; }
 .knoop[aria-pressed='true'] .knoop-label { background: var(--inkt); color: #fff; }
 .knoop:focus-visible { outline: 3px solid var(--blauw); outline-offset: 2px; border-radius: 6px; }
 @container web (max-width: 560px) { .knoop-sub { display: none; } }
+.knoop.kopie .knoop-label { background: #fff; outline: 1px dashed #8a94a3; outline-offset: 1px; }
+.knoop.kopie .knoop-stip { opacity: 0.75; }
+.knoop.kopie[aria-pressed='true'] .knoop-label { background: var(--inkt); color: #fff; }
 .legenda { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 12px; font-size: 13px; color: var(--tekst-2); }
 .legenda span { display: inline-flex; align-items: center; gap: 8px; }
 .legenda i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; }
