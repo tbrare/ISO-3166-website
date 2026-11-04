@@ -14,7 +14,7 @@ import {
   STATUS_LABEL,
   STATUSSEN,
 } from '@/lib/labels';
-import type { Domein, Niveau, Norm, NormType, Relatie, RelatieType, Status } from '@/lib/types';
+import { volledigeTitel, type Domein, type Niveau, type Norm, type NormType, type Relatie, type RelatieType, type Status } from '@/lib/types';
 
 interface RelatieInvoer {
   naar_norm_id: string;
@@ -25,6 +25,9 @@ interface RelatieInvoer {
 interface Formulier {
   code: string;
   titel: string;
+  specificatie: string;
+  afkorting: string;
+  jaar: string;
   type: NormType;
   niveau: Niveau;
   iso3166_editie: string;
@@ -45,6 +48,9 @@ function leegFormulier(domeinen: Domein[]): Formulier {
   return {
     code: '',
     titel: '',
+    specificatie: '',
+    afkorting: '',
+    jaar: '',
     type: 'NEN',
     niveau: 'nationaal',
     iso3166_editie: '',
@@ -66,6 +72,9 @@ function vanNorm(n: Norm, relaties: Relatie[]): Formulier {
   return {
     code: n.code,
     titel: n.titel,
+    specificatie: n.specificatie ?? '',
+    afkorting: n.afkorting ?? '',
+    jaar: n.jaar ? String(n.jaar) : '',
     type: n.type,
     niveau: n.niveau,
     iso3166_editie: n.iso3166_editie ?? '',
@@ -129,11 +138,22 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
       setFout('Vul minimaal normcode, titel en toepassing in.');
       return;
     }
+    if (f.jaar.trim() && !/^(19|20)\d{2}$/.test(f.jaar.trim())) {
+      setFout('Vul het jaartal in als vier cijfers, bijvoorbeeld 2022.');
+      return;
+    }
+    if (/:\d{4}\s*$/.test(f.code.trim())) {
+      setFout('Laat het jaartal weg uit de normcode (bijv. ISO 9362) en vul het in bij Jaartal.');
+      return;
+    }
     setBezig(true);
     const supabase = maakBrowserClient();
     const gegevens = {
       code: f.code.trim(),
       titel: f.titel.trim(),
+      specificatie: leegNaarNull(f.specificatie),
+      afkorting: leegNaarNull(f.afkorting),
+      jaar: f.jaar.trim() ? Number(f.jaar.trim()) : null,
       type: f.type,
       niveau: f.niveau,
       iso3166_editie: leegNaarNull(f.iso3166_editie),
@@ -212,7 +232,7 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
 
   const andereNormen = normen.filter((n) => n.id !== bewerkId);
   const lijst = normen.filter((n) =>
-    [n.code, n.titel, ...n.organisaties].join(' ').toLowerCase().includes(zoek.trim().toLowerCase())
+    [n.code, n.titel, n.specificatie ?? '', n.afkorting ?? '', ...n.organisaties].join(' ').toLowerCase().includes(zoek.trim().toLowerCase())
   );
 
   return (
@@ -229,7 +249,7 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
           <div className="raster">
             <div className="veld">
               <label htmlFor="code">Normcode *</label>
-              <input id="code" type="text" className="mono" value={f.code} onChange={(e) => zet('code', e.target.value)} placeholder="bijv. NEN 1888:2002" />
+              <input id="code" type="text" className="mono" value={f.code} onChange={(e) => zet('code', e.target.value)} placeholder="bijv. ISO 9362 (zonder jaartal)" />
             </div>
             <div className="veld">
               <label htmlFor="type">Type</label>
@@ -240,7 +260,21 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
             </div>
             <div className="veld breed">
               <label htmlFor="titel">Titel *</label>
-              <input id="titel" type="text" value={f.titel} onChange={(e) => zet('titel', e.target.value)} placeholder="Officiële titel van de norm" />
+              <input id="titel" type="text" value={f.titel} onChange={(e) => zet('titel', e.target.value)} placeholder="bijv. Banking — Banking telecommunication messages" />
+            </div>
+            <div className="veld breed">
+              <label htmlFor="specificatie">Specificatie op titel</label>
+              <input id="specificatie" type="text" value={f.specificatie} onChange={(e) => zet('specificatie', e.target.value)} placeholder="bijv. Business identifier code (BIC)" />
+              <span className="hulp">Op de site getoond als: <b>{volledigeTitel(f) || '—'}</b></span>
+            </div>
+            <div className="veld">
+              <label htmlFor="afkorting">Afkorting</label>
+              <input id="afkorting" type="text" value={f.afkorting} onChange={(e) => zet('afkorting', e.target.value)} placeholder="bijv. BIC" />
+            </div>
+            <div className="veld">
+              <label htmlFor="jaar">Jaartal (editie)</label>
+              <input id="jaar" type="text" inputMode="numeric" maxLength={4} value={f.jaar} onChange={(e) => zet('jaar', e.target.value)} placeholder="bijv. 2022" />
+              <span className="hulp">Wordt getoond als <span className="mono">{f.code.trim() || 'code'}{f.jaar.trim() ? `:${f.jaar.trim()}` : ''}</span></span>
             </div>
             <div className="veld">
               <label htmlFor="niveau">Niveau</label>
@@ -388,10 +422,10 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
           {lijst.map((n) => (
             <li key={n.id} className={`item${n.id === bewerkId ? ' geselecteerd' : ''}`}>
               <div className="item-kop">
-                <span className="mono" style={{ fontWeight: 500 }}>{n.code}</span>
+                <span className="mono" style={{ fontWeight: 500 }}>{n.code}{n.jaar ? `:${n.jaar}` : ''}</span>
                 <span className={`label ${n.status}`}>{STATUS_LABEL[n.status]}</span>
               </div>
-              <div style={{ fontSize: 14, marginTop: 4 }}>{n.titel}</div>
+              <div style={{ fontSize: 14, marginTop: 4 }}>{volledigeTitel(n)}</div>
               <div style={{ fontSize: 13, color: 'var(--tekst-3)', marginTop: 4 }}>
                 {(n.organisaties.join(', ') || '—') + ' · ' + NIVEAU_LABEL[n.niveau]}
               </div>
