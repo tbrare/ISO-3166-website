@@ -19,6 +19,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   const [niveau, setNiveau] = useState<NiveauFilter>('alle');
   const [soort, setSoort] = useState<SoortFilter>('alle');
   const [toonRelaties, setToonRelaties] = useState(true);
+  const [actiefDomein, setActiefDomein] = useState<string | null>(null);
   const [zoek, setZoek] = useState('');
 
   const domeinNaam = useMemo(() => Object.fromEntries(domeinen.map((d) => [d.id, d.naam])), [domeinen]);
@@ -27,6 +28,9 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   const zichtbaar = (n: Norm) =>
     (niveau === 'alle' || n.niveau === niveau) && (soort === 'alle' || (soort === 'formeel') === n.formeel);
 
+  const inDomein = (n: Norm) =>
+    actiefDomein === null || n.hoofddomein_id === actiefDomein || n.extra_domein_ids.includes(actiefDomein);
+
   const domeinenVan = (n: Norm) =>
     [n.hoofddomein_id, ...n.extra_domein_ids]
       .filter((id): id is string => !!id && !!domeinNaam[id])
@@ -34,7 +38,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
       .join(', ') || '—';
 
   const rijen = normen.filter((n) => {
-    if (!zichtbaar(n)) return false;
+    if (!zichtbaar(n) || !inDomein(n)) return false;
     if (!zoek.trim()) return true;
     const hooi = [n.code, n.titel, n.specificatie ?? '', n.afkorting ?? '', n.jaar ?? '', n.toepassing, ...n.organisaties].join(' ').toLowerCase();
     return hooi.includes(zoek.trim().toLowerCase());
@@ -98,18 +102,26 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             </div>
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>
-            Elke draad is een toepassingsdomein, elke ring een niveau. Paarse pijlen zijn directe verwijzingen tussen normen. Klik op een
-            norm voor details.
+            Vanuit ISO 3166 vertakt het web naar de toepassingsdomeinen, en vanuit elk domein naar de normen die er gebruik van maken. Klik
+            op een domein om alleen die waaier te tonen, of op een norm voor details. Paarse pijlen zijn directe verwijzingen tussen normen.
           </p>
           <Spinnenweb
             domeinen={domeinen}
             normen={normen}
             relaties={relaties}
             geselecteerd={geselecteerd}
+            actiefDomein={actiefDomein}
+            onKiesDomein={setActiefDomein}
             zichtbaar={zichtbaar}
             toonRelaties={toonRelaties}
             onKies={kies}
           />
+          {actiefDomein && (
+            <p style={{ margin: '8px 0 0', fontSize: 14 }}>
+              Alleen domein <b>{domeinNaam[actiefDomein]}</b>.{' '}
+              <button type="button" className="knop klein" onClick={() => setActiefDomein(null)}>Toon alle domeinen</button>
+            </p>
+          )}
           <div className="legenda">
             <span><i style={{ background: NIVEAU_KLEUR.internationaal }} />Internationaal</span>
             <span><i style={{ background: NIVEAU_KLEUR.europees }} />Europees</span>
@@ -118,7 +130,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
             <span><i style={{ border: '3px dashed #4B5563' }} />Nog te verifiëren</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #6D28D9' }} />Directe relatie</span>
-            <span><b style={{ fontSize: 11, color: '#6D28D9' }}>+1</b>Ook in ander domein</span>
+            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px dashed #8A94A3' }} />Ook in ander domein</span>
           </div>
         </div>
 
