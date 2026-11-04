@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { NIVEAU_KLEUR } from '@/lib/labels';
-import { berekenWeb, DOMEIN_B, MIDDEN, WEB_B, WEB_H } from '@/lib/web-layout';
+import { berekenWeb, DOMEIN_B, MIDDEN, ondertitel, WEB_B, WEB_H } from '@/lib/web-layout';
 import type { Domein, Norm, Relatie } from '@/lib/types';
 
 interface Props {
@@ -66,7 +66,7 @@ export default function Spinnenweb({
               fill="none"
               stroke={NIVEAU_KLEUR[n.niveau]}
               strokeWidth={t.soort === 'domein' ? 1.8 : 2.2}
-              strokeDasharray={n.status === 'bevestigd' ? undefined : '5 5'}
+              strokeDasharray={n.gebruikt_iso3166 ? undefined : '6 5'}
               opacity={normActief(n) ? 1 : 0.12}
             />
           );
@@ -103,7 +103,7 @@ export default function Spinnenweb({
         if (!p) return null;
         const kleur = NIVEAU_KLEUR[n.niveau];
         const gekozen = n.id === geselecteerd;
-        const klassen = ['knoop-stip', n.formeel ? '' : 'informeel', n.status === 'bevestigd' ? '' : 'onzeker'].join(' ').trim();
+        const klassen = ['knoop-stip', n.formeel ? '' : 'informeel', n.gebruikt_iso3166 ? '' : 'indirect'].join(' ').trim();
         return (
           <button
             key={n.id}
@@ -116,6 +116,7 @@ export default function Spinnenweb({
           >
             <span className={klassen} style={{ borderColor: kleur, background: gekozen ? kleur : '#fff' }} />
             <span className="knoop-label">{n.code}</span>
+            <span className="knoop-sub">{ondertitel(n)}</span>
           </button>
         );
       })}
