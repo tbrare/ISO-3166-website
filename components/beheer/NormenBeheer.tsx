@@ -42,6 +42,7 @@ interface Formulier {
   extra_domein_ids: string[];
   toepassing: string;
   beleidsrelevantie: string;
+  gebruikt_iso3166: boolean;
   iso3166_delen: string[];
   element: string;
   afwijkingen: string;
@@ -66,6 +67,7 @@ function leegFormulier(domeinen: Domein[]): Formulier {
     extra_domein_ids: [],
     toepassing: '',
     beleidsrelevantie: '',
+    gebruikt_iso3166: true,
     iso3166_delen: [],
     element: '',
     afwijkingen: '',
@@ -91,6 +93,7 @@ function vanNorm(n: Norm, relaties: Relatie[]): Formulier {
     extra_domein_ids: n.extra_domein_ids,
     toepassing: n.toepassing,
     beleidsrelevantie: n.beleidsrelevantie ?? '',
+    gebruikt_iso3166: n.gebruikt_iso3166,
     iso3166_delen: n.iso3166_delen,
     element: n.element ?? '',
     afwijkingen: n.afwijkingen ?? '',
@@ -162,6 +165,10 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
       setFout('Vul bij elke verwijzing naar ISO 3166 een paragraafnummer in.');
       return;
     }
+    if (!f.gebruikt_iso3166 && f.status === 'bevestigd' && !f.relaties.some((r) => r.naar_norm_id)) {
+      setFout('Deze norm gebruikt ISO 3166 niet direct. Leg bij blok 4 minimaal één relatie vast met de norm via welke ISO 3166 wordt gebruikt, voordat je hem bevestigt.');
+      return;
+    }
     if (/:\d{4}\s*$/.test(f.code.trim())) {
       setFout('Laat het jaartal weg uit de normcode (bijv. ISO 9362) en vul het in bij Jaartal.');
       return;
@@ -181,6 +188,7 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
       hoofddomein_id: f.hoofddomein_id || null,
       toepassing: f.toepassing.trim(),
       beleidsrelevantie: leegNaarNull(f.beleidsrelevantie),
+      gebruikt_iso3166: f.gebruikt_iso3166,
       iso3166_delen: f.iso3166_delen,
       element: leegNaarNull(f.element),
       afwijkingen: leegNaarNull(f.afwijkingen),
@@ -360,69 +368,85 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
           </div>
 
           <h2 className="blok-titel">3 · Hoe ISO 3166 wordt gebruikt</h2>
-          <fieldset>
-            <legend>Gebruikt deel en codeformaat</legend>
-            <div className="vinkjes">
-              {ISO3166_DELEN.map((d) => (
-                <label key={d}>
-                  <input type="checkbox" checked={f.iso3166_delen.includes(d)} onChange={() => zet('iso3166_delen', wissel(f.iso3166_delen, d))} />
-                  <span className="mono">{d}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="raster" style={{ marginTop: 16 }}>
-            <div className="veld">
-              <label htmlFor="elem">Waar in de norm</label>
-              <input id="elem" type="text" value={f.element} onChange={(e) => zet('element', e.target.value)} placeholder="bijv. element 'nationaliteit', positie 5–6" />
-            </div>
-            <div className="veld">
-              <label htmlFor="afw">Afwijkingen van ISO 3166</label>
-              <input id="afw" type="text" value={f.afwijkingen} onChange={(e) => zet('afwijkingen', e.target.value)} placeholder="bijv. EL i.p.v. GR, eigen codes" />
-            </div>
+          <div className="vinkjes" style={{ marginBottom: 8 }}>
+            <label>
+              <input type="checkbox" checked={f.gebruikt_iso3166} onChange={() => zet('gebruikt_iso3166', !f.gebruikt_iso3166)} />
+              <span><b>Deze norm verwijst direct naar ISO 3166</b></span>
+            </label>
           </div>
-
-          <fieldset style={{ marginTop: 16 }}>
-            <legend>Verwijzingen naar ISO 3166 in de normtekst</legend>
-            <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>
-              Eén regel per paragraaf waarin de norm naar ISO 3166 verwijst.
+          {!f.gebruikt_iso3166 && (
+            <p className="foutmelding" style={{ margin: '0 0 8px', background: '#EDE9FE', color: '#4C1D95' }}>
+              Indirect gebruik: de norm verwijst zelf niet naar ISO 3166, maar het is te verwachten dat er een koppeling is via een
+              andere norm. Leg die norm vast bij blok 4 hieronder; in het web komt deze norm in het verlengde daarvan te liggen.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {f.verwijzingen.map((v, i) => {
-                const wijzig = (deel: Partial<VerwijzingInvoer>) =>
-                  zet('verwijzingen', f.verwijzingen.map((x, j) => (j === i ? { ...x, ...deel } : x)));
-                return (
-                  <div key={i} style={{ borderLeft: '3px solid var(--rand)', paddingLeft: 12 }}>
-                    <div className="relatie-rij">
-                      <div className="veld" style={{ flex: '0 1 140px' }}>
-                        <label htmlFor={`pn-${i}`}>Paragraaf nr. *</label>
-                        <input id={`pn-${i}`} type="text" className="mono" value={v.paragraaf_nummer} onChange={(e) => wijzig({ paragraaf_nummer: e.target.value })} placeholder="bijv. 5.2" />
-                      </div>
-                      <div className="veld" style={{ flex: '1 1 260px' }}>
-                        <label htmlFor={`pt-${i}`}>Paragraaftitel</label>
-                        <input id={`pt-${i}`} type="text" value={v.paragraaf_titel} onChange={(e) => wijzig({ paragraaf_titel: e.target.value })} placeholder="bijv. Structure of the BIC" />
-                      </div>
-                      <button type="button" className="knop" onClick={() => zet('verwijzingen', f.verwijzingen.filter((_, j) => j !== i))}>
-                        Verwijderen<span className="verborgen"> verwijzing {v.paragraaf_nummer}</span>
-                      </button>
-                    </div>
-                    <div className="veld" style={{ marginTop: 10 }}>
-                      <label htmlFor={`pl-${i}`}>Toelichting</label>
-                      <textarea id={`pl-${i}`} rows={2} value={v.toelichting} onChange={(e) => wijzig({ toelichting: e.target.value })} placeholder="bijv. Positie 5–6 bevat de landcode volgens ISO 3166-1 alpha-2" />
-                    </div>
-                  </div>
-                );
-              })}
+          )}
+          {f.gebruikt_iso3166 && (
+            <>
+            <fieldset>
+              <legend>Gebruikt deel en codeformaat</legend>
+              <div className="vinkjes">
+                {ISO3166_DELEN.map((d) => (
+                  <label key={d}>
+                    <input type="checkbox" checked={f.iso3166_delen.includes(d)} onChange={() => zet('iso3166_delen', wissel(f.iso3166_delen, d))} />
+                    <span className="mono">{d}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="raster" style={{ marginTop: 16 }}>
+              <div className="veld">
+                <label htmlFor="elem">Waar in de norm</label>
+                <input id="elem" type="text" value={f.element} onChange={(e) => zet('element', e.target.value)} placeholder="bijv. element 'nationaliteit', positie 5–6" />
+              </div>
+              <div className="veld">
+                <label htmlFor="afw">Afwijkingen van ISO 3166</label>
+                <input id="afw" type="text" value={f.afwijkingen} onChange={(e) => zet('afwijkingen', e.target.value)} placeholder="bijv. EL i.p.v. GR, eigen codes" />
+              </div>
             </div>
-            <button
-              type="button"
-              className="knop paars"
-              style={{ marginTop: 12 }}
-              onClick={() => zet('verwijzingen', [...f.verwijzingen, { paragraaf_nummer: '', paragraaf_titel: '', toelichting: '' }])}
-            >
-              + Verwijzing toevoegen
-            </button>
-          </fieldset>
+
+            <fieldset style={{ marginTop: 16 }}>
+              <legend>Verwijzingen naar ISO 3166 in de normtekst</legend>
+              <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>
+                Eén regel per paragraaf waarin de norm naar ISO 3166 verwijst.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {f.verwijzingen.map((v, i) => {
+                  const wijzig = (deel: Partial<VerwijzingInvoer>) =>
+                    zet('verwijzingen', f.verwijzingen.map((x, j) => (j === i ? { ...x, ...deel } : x)));
+                  return (
+                    <div key={i} style={{ borderLeft: '3px solid var(--rand)', paddingLeft: 12 }}>
+                      <div className="relatie-rij">
+                        <div className="veld" style={{ flex: '0 1 140px' }}>
+                          <label htmlFor={`pn-${i}`}>Paragraaf nr. *</label>
+                          <input id={`pn-${i}`} type="text" className="mono" value={v.paragraaf_nummer} onChange={(e) => wijzig({ paragraaf_nummer: e.target.value })} placeholder="bijv. 5.2" />
+                        </div>
+                        <div className="veld" style={{ flex: '1 1 260px' }}>
+                          <label htmlFor={`pt-${i}`}>Paragraaftitel</label>
+                          <input id={`pt-${i}`} type="text" value={v.paragraaf_titel} onChange={(e) => wijzig({ paragraaf_titel: e.target.value })} placeholder="bijv. Structure of the BIC" />
+                        </div>
+                        <button type="button" className="knop" onClick={() => zet('verwijzingen', f.verwijzingen.filter((_, j) => j !== i))}>
+                          Verwijderen<span className="verborgen"> verwijzing {v.paragraaf_nummer}</span>
+                        </button>
+                      </div>
+                      <div className="veld" style={{ marginTop: 10 }}>
+                        <label htmlFor={`pl-${i}`}>Toelichting</label>
+                        <textarea id={`pl-${i}`} rows={2} value={v.toelichting} onChange={(e) => wijzig({ toelichting: e.target.value })} placeholder="bijv. Positie 5–6 bevat de landcode volgens ISO 3166-1 alpha-2" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className="knop paars"
+                style={{ marginTop: 12 }}
+                onClick={() => zet('verwijzingen', [...f.verwijzingen, { paragraaf_nummer: '', paragraaf_titel: '', toelichting: '' }])}
+              >
+                + Verwijzing toevoegen
+              </button>
+            </fieldset>
+            </>
+          )}
 
           <h2 className="blok-titel">4 · Directe relaties met andere normen</h2>
           <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>Alleen als deze norm in de tekst rechtstreeks naar een andere norm verwijst.</p>
