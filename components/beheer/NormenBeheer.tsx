@@ -14,12 +14,18 @@ import {
   STATUS_LABEL,
   STATUSSEN,
 } from '@/lib/labels';
-import { volledigeTitel, type Domein, type Niveau, type Norm, type NormType, type Relatie, type RelatieType, type Status } from '@/lib/types';
+import { volledigeTitel, type Domein, type Iso3166Verwijzing, type Niveau, type Norm, type NormType, type Relatie, type RelatieType, type Status } from '@/lib/types';
 
 interface RelatieInvoer {
   naar_norm_id: string;
   type: RelatieType;
   status: Status;
+}
+
+interface VerwijzingInvoer {
+  paragraaf_nummer: string;
+  paragraaf_titel: string;
+  toelichting: string;
 }
 
 interface Formulier {
@@ -42,6 +48,7 @@ interface Formulier {
   bron: string;
   status: Status;
   relaties: RelatieInvoer[];
+  verwijzingen: VerwijzingInvoer[];
 }
 
 function leegFormulier(domeinen: Domein[]): Formulier {
@@ -65,6 +72,7 @@ function leegFormulier(domeinen: Domein[]): Formulier {
     bron: '',
     status: 'concept',
     relaties: [],
+    verwijzingen: [],
   };
 }
 
@@ -91,6 +99,11 @@ function vanNorm(n: Norm, relaties: Relatie[]): Formulier {
     relaties: relaties
       .filter((r) => r.van_norm_id === n.id)
       .map((r) => ({ naar_norm_id: r.naar_norm_id, type: r.type, status: r.status })),
+    verwijzingen: n.verwijzingen.map((v: Iso3166Verwijzing) => ({
+      paragraaf_nummer: v.paragraaf_nummer,
+      paragraaf_titel: v.paragraaf_titel ?? '',
+      toelichting: v.toelichting ?? '',
+    })),
   };
 }
 
@@ -140,6 +153,13 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
     }
     if (f.jaar.trim() && !/^(19|20)\d{2}$/.test(f.jaar.trim())) {
       setFout('Vul het jaartal in als vier cijfers, bijvoorbeeld 2022.');
+      return;
+    }
+    const ingevuldeVerwijzingen = f.verwijzingen.filter(
+      (v) => v.paragraaf_nummer.trim() || v.paragraaf_titel.trim() || v.toelichting.trim()
+    );
+    if (ingevuldeVerwijzingen.some((v) => !v.paragraaf_nummer.trim())) {
+      setFout('Vul bij elke verwijzing naar ISO 3166 een paragraafnummer in.');
       return;
     }
     if (/:\d{4}\s*$/.test(f.code.trim())) {
@@ -204,6 +224,22 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
       if (nieuweRelaties.length > 0) {
         const r4 = await supabase.from('relaties').insert(nieuweRelaties);
         if (r4.error) throw r4.error;
+      }
+
+      // Verwijzingen naar ISO 3166 vervangen
+      const r5 = await supabase.from('iso3166_verwijzingen').delete().eq('norm_id', id);
+      if (r5.error) throw r5.error;
+      if (ingevuldeVerwijzingen.length > 0) {
+        const r6 = await supabase.from('iso3166_verwijzingen').insert(
+          ingevuldeVerwijzingen.map((v, i) => ({
+            norm_id: id,
+            paragraaf_nummer: v.paragraaf_nummer.trim(),
+            paragraaf_titel: leegNaarNull(v.paragraaf_titel),
+            toelichting: leegNaarNull(v.toelichting),
+            volgorde: i + 1,
+          }))
+        );
+        if (r6.error) throw r6.error;
       }
 
       setOk(`${gegevens.code} is opgeslagen.`);
@@ -345,6 +381,48 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
               <input id="afw" type="text" value={f.afwijkingen} onChange={(e) => zet('afwijkingen', e.target.value)} placeholder="bijv. EL i.p.v. GR, eigen codes" />
             </div>
           </div>
+
+          <fieldset style={{ marginTop: 16 }}>
+            <legend>Verwijzingen naar ISO 3166 in de normtekst</legend>
+            <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>
+              Eén regel per paragraaf waarin de norm naar ISO 3166 verwijst.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {f.verwijzingen.map((v, i) => {
+                const wijzig = (deel: Partial<VerwijzingInvoer>) =>
+                  zet('verwijzingen', f.verwijzingen.map((x, j) => (j === i ? { ...x, ...deel } : x)));
+                return (
+                  <div key={i} style={{ borderLeft: '3px solid var(--rand)', paddingLeft: 12 }}>
+                    <div className="relatie-rij">
+                      <div className="veld" style={{ flex: '0 1 140px' }}>
+                        <label htmlFor={`pn-${i}`}>Paragraaf nr. *</label>
+                        <input id={`pn-${i}`} type="text" className="mono" value={v.paragraaf_nummer} onChange={(e) => wijzig({ paragraaf_nummer: e.target.value })} placeholder="bijv. 5.2" />
+                      </div>
+                      <div className="veld" style={{ flex: '1 1 260px' }}>
+                        <label htmlFor={`pt-${i}`}>Paragraaftitel</label>
+                        <input id={`pt-${i}`} type="text" value={v.paragraaf_titel} onChange={(e) => wijzig({ paragraaf_titel: e.target.value })} placeholder="bijv. Structure of the BIC" />
+                      </div>
+                      <button type="button" className="knop" onClick={() => zet('verwijzingen', f.verwijzingen.filter((_, j) => j !== i))}>
+                        Verwijderen<span className="verborgen"> verwijzing {v.paragraaf_nummer}</span>
+                      </button>
+                    </div>
+                    <div className="veld" style={{ marginTop: 10 }}>
+                      <label htmlFor={`pl-${i}`}>Toelichting</label>
+                      <textarea id={`pl-${i}`} rows={2} value={v.toelichting} onChange={(e) => wijzig({ toelichting: e.target.value })} placeholder="bijv. Positie 5–6 bevat de landcode volgens ISO 3166-1 alpha-2" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="knop paars"
+              style={{ marginTop: 12 }}
+              onClick={() => zet('verwijzingen', [...f.verwijzingen, { paragraaf_nummer: '', paragraaf_titel: '', toelichting: '' }])}
+            >
+              + Verwijzing toevoegen
+            </button>
+          </fieldset>
 
           <h2 className="blok-titel">4 · Directe relaties met andere normen</h2>
           <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>Alleen als deze norm in de tekst rechtstreeks naar een andere norm verwijst.</p>
