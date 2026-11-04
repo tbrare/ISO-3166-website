@@ -1,18 +1,16 @@
 'use client';
 
 import { useMemo } from 'react';
-import { NIVEAU_KLEUR, RELATIE_LABEL } from '@/lib/labels';
-import { berekenWeb, MIDDEN, relatieLijn, STRAAL_DOMEIN, WEB_B, WEB_H } from '@/lib/web-layout';
-import type { Domein, Norm, Relatie } from '@/lib/types';
+import { NIVEAU_KLEUR } from '@/lib/labels';
+import { berekenWeb, MIDDEN, STRAAL_DOMEIN, WEB_B, WEB_H } from '@/lib/web-layout';
+import type { Domein, Norm } from '@/lib/types';
 
 interface Props {
   domeinen: Domein[];
   normen: Norm[];
-  relaties: Relatie[];
   geselecteerd: string | null;
   actiefDomein: string | null;
   zichtbaar: (n: Norm) => boolean;
-  toonRelaties: boolean;
   onKies: (id: string) => void;
   onKiesDomein: (id: string | null) => void;
 }
@@ -22,23 +20,14 @@ const pct = (v: number, max: number) => `${(v / max) * 100}%`;
 export default function Spinnenweb({
   domeinen,
   normen,
-  relaties,
   geselecteerd,
   actiefDomein,
   zichtbaar,
-  toonRelaties,
   onKies,
   onKiesDomein,
 }: Props) {
   const { domeinKnopen, posities, takken } = useMemo(() => berekenWeb(domeinen, normen), [domeinen, normen]);
   const perId = useMemo(() => Object.fromEntries(normen.map((n) => [n.id, n])), [normen]);
-  const lijnen = useMemo(
-    () =>
-      relaties
-        .map((r) => ({ r, lijn: relatieLijn(r, posities) }))
-        .filter((x): x is { r: Relatie; lijn: NonNullable<ReturnType<typeof relatieLijn>> } => x.lijn !== null),
-    [relaties, posities]
-  );
 
   const domeinActief = (id: string) => actiefDomein === null || actiefDomein === id;
   const normActief = (n: Norm) =>
@@ -47,11 +36,6 @@ export default function Spinnenweb({
   return (
     <div className="web">
       <svg viewBox={`0 0 ${WEB_B} ${WEB_H}`} role="img" aria-label="Spinnenweb: ISO 3166 in het midden, daaromheen de domeinen, en per domein de normen die ISO 3166 gebruiken">
-        <defs>
-          <marker id="relatiepijl" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4" markerUnits="userSpaceOnUse">
-            <path d="M0 0 L8 4 L0 8 Z" fill="#6D28D9" />
-          </marker>
-        </defs>
 
         <circle cx={MIDDEN.x} cy={MIDDEN.y} r={STRAAL_DOMEIN} fill="none" stroke="#CBD2DC" strokeWidth={1} strokeDasharray="4 6" />
 
@@ -70,7 +54,7 @@ export default function Spinnenweb({
         ))}
 
         {/* Domein → normen */}
-        {takken.map((t) => {
+        {takken.filter((t) => !t.extra).map((t) => {
           const n = perId[t.normId];
           if (!n) return null;
           const aan = normActief(n) && (actiefDomein === null || actiefDomein === t.domeinId);
@@ -87,21 +71,6 @@ export default function Spinnenweb({
           );
         })}
 
-        {/* Directe relaties tussen normen */}
-        {toonRelaties &&
-          lijnen.map(({ r, lijn }) => {
-            const a = perId[r.van_norm_id];
-            const b = perId[r.naar_norm_id];
-            if (!a || !b || !normActief(a) || !normActief(b)) return null;
-            return (
-              <g key={r.id}>
-                <path d={lijn.d} fill="none" stroke="#6D28D9" strokeWidth={2} strokeDasharray={r.status === 'bevestigd' ? undefined : '6 5'} markerEnd="url(#relatiepijl)" />
-                <text x={lijn.label.x} y={lijn.label.y} textAnchor="middle" fontSize={12} fill="#6D28D9">
-                  {RELATIE_LABEL[r.type]}
-                </text>
-              </g>
-            );
-          })}
       </svg>
 
       <div className="web-midden" aria-hidden="true">
