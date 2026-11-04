@@ -124,6 +124,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />Lijn tussen normen: de buitenste norm verwijst naar of bouwt voort op de binnenste</span>
+            <span><i style={{ border: '3px dashed #4B5563' }} />Gebruikt ISO 3166 indirect, via een andere norm</span>
           </div>
         </div>
 
@@ -150,6 +151,14 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 <div><dt>Organisaties</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
                 <div><dt>Domeinen</dt><dd>{domeinenVan(huidig)}</dd></div>
                 <div>
+                  <dt>Gebruik van ISO 3166</dt>
+                  <dd>
+                    {huidig.gebruikt_iso3166
+                      ? 'Direct: de norm verwijst zelf naar ISO 3166'
+                      : `Indirect${huidigeRelaties.some((x) => x.uit) ? `, via ${huidigeRelaties.filter((x) => x.uit).map((x) => x.ander.code).join(', ')}` : ''}`}
+                  </dd>
+                </div>
+                {huidig.gebruikt_iso3166 && <div>
                   <dt>Verwijzingen naar ISO 3166 in de tekst</dt>
                   <dd>
                     {huidig.verwijzingen.length === 0 ? (
@@ -166,7 +175,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                       </ul>
                     )}
                   </dd>
-                </div>
+                </div>}
                 <div>
                   <dt>Directe relaties</dt>
                   <dd>
@@ -231,6 +240,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                   <th scope="col">Afkorting</th>
                   <th scope="col">Niveau</th>
                   <th scope="col">Soort</th>
+                  <th scope="col">ISO 3166</th>
                   <th scope="col">Domeinen</th>
                   <th scope="col">Organisaties</th>
                   <th scope="col">Toepassing</th>
@@ -248,6 +258,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                     <td>{n.afkorting || '—'}</td>
                     <td className="nowrap"><span className="stip" style={{ background: NIVEAU_KLEUR[n.niveau] }} />{NIVEAU_LABEL[n.niveau]}</td>
                     <td className="nowrap">{n.formeel ? 'Formeel' : 'Informeel'}</td>
+                    <td className="nowrap">{n.gebruikt_iso3166 ? 'Direct' : 'Indirect'}</td>
                     <td>{domeinenVan(n)}</td>
                     <td>{n.organisaties.join(', ') || '—'}</td>
                     <td>{n.toepassing}</td>
