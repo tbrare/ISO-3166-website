@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Spinnenweb from './Spinnenweb';
-import { NIVEAU_KLEUR, NIVEAU_LABEL, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD, STATUS_LABEL } from '@/lib/labels';
+import { NIVEAU_KLEUR, NIVEAU_LABEL, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD } from '@/lib/labels';
 import { volledigeTitel, type Domein, type Niveau, type Norm, type Relatie } from '@/lib/types';
 
 type NiveauFilter = 'alle' | Niveau;
@@ -73,7 +73,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
           <div className="cijfer"><b>{normen.length}</b><span>normen en codelijsten</span></div>
           <div className="cijfer"><b>{organisaties.size}</b><span>organisaties</span></div>
           <div className="cijfer"><b>{relaties.length}</b><span>directe relaties tussen normen</span></div>
-          <div className="cijfer"><b style={{ color: '#92400E' }}>{normen.filter((n) => n.status !== 'bevestigd').length}</b><span>nog te verifiëren</span></div>
+          <div className="cijfer"><b>{domeinen.length}</b><span>toepassingsdomeinen</span></div>
         </div>
       </section>
 
@@ -128,7 +128,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />Nationaal</span>
             <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
-            <span><i style={{ border: '3px dashed #4B5563' }} />Nog te verifiëren</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #6D28D9' }} />Directe relatie</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px dashed #8A94A3' }} />Ook in ander domein</span>
           </div>
@@ -140,7 +139,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
               <div className="labels">
                 <span className="label" style={{ background: NIVEAU_KLEUR[huidig.niveau], color: '#fff' }}>{NIVEAU_LABEL[huidig.niveau]}</span>
                 <span className="label">{huidig.formeel ? 'Formele norm' : 'Informeel'}</span>
-                <span className={`label ${huidig.status}`}>{STATUS_LABEL[huidig.status]}</span>
               </div>
               <p className="detail-code">
                 {huidig.code}
@@ -168,7 +166,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                           <li key={r.id}>
                             <span style={{ color: 'var(--paars)' }}>{uit ? RELATIE_LABEL[r.type] : RELATIE_LABEL_OMGEKEERD[r.type]}</span>
                             <button type="button" className="relatie-knop" onClick={() => kies(ander.id)}>{ander.code}</button>
-                            {r.status !== 'bevestigd' && <span style={{ fontSize: 12, color: 'var(--tekst-3)' }}>(te verifiëren)</span>}
                           </li>
                         ))}
                       </ul>
@@ -225,7 +222,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                   <th scope="col">Domeinen</th>
                   <th scope="col">Organisaties</th>
                   <th scope="col">Toepassing</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span className="verborgen">Actie</span></th>
                 </tr>
               </thead>
@@ -243,7 +239,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                     <td>{domeinenVan(n)}</td>
                     <td>{n.organisaties.join(', ') || '—'}</td>
                     <td>{n.toepassing}</td>
-                    <td className="nowrap"><span className={`label ${n.status}`}>{STATUS_LABEL[n.status]}</span></td>
                     <td>
                       <a href="#detail" onClick={() => kies(n.id)} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, fontWeight: 600 }}>
                         Bekijk<span className="verborgen"> {n.code}</span>
