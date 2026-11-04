@@ -1,5 +1,5 @@
 import { maakServerClient } from './supabase/server';
-import { naarNorm, type Domein, type Norm, type NormRij, type Relatie } from './types';
+import { naarNorm, NORM_SELECT, type Domein, type Norm, type NormRij, type Relatie } from './types';
 
 /** Haalt alles op wat de site nodig heeft. RLS bepaalt wat zichtbaar is. */
 export async function haalRegisterOp(opties: { alleenBevestigd?: boolean } = {}): Promise<{
@@ -9,7 +9,7 @@ export async function haalRegisterOp(opties: { alleenBevestigd?: boolean } = {})
   fout: string | null;
 }> {
   const supabase = await maakServerClient();
-  let normenQuery = supabase.from('normen').select('*, norm_domeinen(domein_id)').order('code');
+  let normenQuery = supabase.from('normen').select(NORM_SELECT).order('code');
   let relatiesQuery = supabase.from('relaties').select('id, van_norm_id, naar_norm_id, type, status');
   if (opties.alleenBevestigd) {
     normenQuery = normenQuery.eq('status', 'bevestigd');
