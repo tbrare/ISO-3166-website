@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react';
 import { NIVEAU_KLEUR } from '@/lib/labels';
-import { berekenWeb, MIDDEN, STRAAL_DOMEIN, WEB_B, WEB_H } from '@/lib/web-layout';
-import type { Domein, Norm } from '@/lib/types';
+import { berekenWeb, DOMEIN_B, MIDDEN, WEB_B, WEB_H } from '@/lib/web-layout';
+import type { Domein, Norm, Relatie } from '@/lib/types';
 
 interface Props {
   domeinen: Domein[];
   normen: Norm[];
+  relaties: Relatie[];
   geselecteerd: string | null;
   actiefDomein: string | null;
   zichtbaar: (n: Norm) => boolean;
@@ -20,13 +21,17 @@ const pct = (v: number, max: number) => `${(v / max) * 100}%`;
 export default function Spinnenweb({
   domeinen,
   normen,
+  relaties,
   geselecteerd,
   actiefDomein,
   zichtbaar,
   onKies,
   onKiesDomein,
 }: Props) {
-  const { domeinKnopen, posities, takken } = useMemo(() => berekenWeb(domeinen, normen), [domeinen, normen]);
+  const { domeinKnopen, posities, takken } = useMemo(
+    () => berekenWeb(domeinen, normen, relaties),
+    [domeinen, normen, relaties]
+  );
   const perId = useMemo(() => Object.fromEntries(normen.map((n) => [n.id, n])), [normen]);
 
   const domeinActief = (id: string) => actiefDomein === null || actiefDomein === id;
@@ -35,10 +40,7 @@ export default function Spinnenweb({
 
   return (
     <div className="web">
-      <svg viewBox={`0 0 ${WEB_B} ${WEB_H}`} role="img" aria-label="Spinnenweb: ISO 3166 in het midden, daaromheen de domeinen, en per domein de normen die ISO 3166 gebruiken">
-
-        <circle cx={MIDDEN.x} cy={MIDDEN.y} r={STRAAL_DOMEIN} fill="none" stroke="#CBD2DC" strokeWidth={1} strokeDasharray="4 6" />
-
+      <svg viewBox={`0 0 ${WEB_B} ${WEB_H}`} role="img" aria-label="Spinnenweb: ISO 3166 in het midden, daaromheen de domeinen, per domein de normen die ISO 3166 gebruiken, en normen die daarop voortbouwen in het verlengde">
         {/* ISO 3166 → domeinen */}
         {domeinKnopen.map((d) => (
           <line
@@ -53,24 +55,22 @@ export default function Spinnenweb({
           />
         ))}
 
-        {/* Domein → normen */}
-        {takken.filter((t) => !t.extra).map((t) => {
+        {/* Domein → norm, en norm → norm die erop voortbouwt */}
+        {takken.map((t) => {
           const n = perId[t.normId];
           if (!n) return null;
-          const aan = normActief(n) && (actiefDomein === null || actiefDomein === t.domeinId);
           return (
             <path
-              key={`${t.domeinId}-${t.normId}`}
+              key={t.id}
               d={t.d}
               fill="none"
-              stroke={t.extra ? '#8A94A3' : NIVEAU_KLEUR[n.niveau]}
-              strokeWidth={t.extra ? 1.2 : 1.8}
-              strokeDasharray={t.extra ? '3 5' : n.status === 'bevestigd' ? undefined : '5 5'}
-              opacity={aan ? (t.extra ? 0.7 : 1) : 0.12}
+              stroke={NIVEAU_KLEUR[n.niveau]}
+              strokeWidth={t.soort === 'domein' ? 1.8 : 2.2}
+              strokeDasharray={n.status === 'bevestigd' ? undefined : '5 5'}
+              opacity={normActief(n) ? 1 : 0.12}
             />
           );
         })}
-
       </svg>
 
       <div className="web-midden" aria-hidden="true">
@@ -86,9 +86,14 @@ export default function Spinnenweb({
           aria-pressed={actiefDomein === d.id}
           aria-label={`Domein ${d.naam}, ${d.aantal} normen. ${actiefDomein === d.id ? 'Klik om alle domeinen te tonen.' : 'Klik om alleen dit domein te tonen.'}`}
           onClick={() => onKiesDomein(actiefDomein === d.id ? null : d.id)}
-          style={{ left: pct(d.punt.x, WEB_B), top: pct(d.punt.y, WEB_H), opacity: domeinActief(d.id) ? 1 : 0.35 }}
+          style={{
+            left: pct(d.punt.x, WEB_B),
+            top: pct(d.punt.y, WEB_H),
+            width: pct(DOMEIN_B, WEB_B),
+            opacity: domeinActief(d.id) ? 1 : 0.35,
+          }}
         >
-          {d.naam}
+          <span className="domein-naam">{d.naam}</span>
           <span className="domein-aantal">{d.aantal}</span>
         </button>
       ))}
@@ -110,10 +115,7 @@ export default function Spinnenweb({
             style={{ left: pct(p.x, WEB_B), top: pct(p.y, WEB_H), opacity: normActief(n) ? 1 : 0.15 }}
           >
             <span className={klassen} style={{ borderColor: kleur, background: gekozen ? kleur : '#fff' }} />
-            <span className="knoop-label">
-              {n.code}
-              {n.extra_domein_ids.length > 0 && <span className="extra">+{n.extra_domein_ids.length}</span>}
-            </span>
+            <span className="knoop-label">{n.code}</span>
           </button>
         );
       })}
