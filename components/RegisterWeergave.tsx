@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Spinnenweb from './Spinnenweb';
 import { NIVEAU_KLEUR, NIVEAU_LABEL, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD, STATUS_LABEL } from '@/lib/labels';
-import type { Domein, Niveau, Norm, Relatie } from '@/lib/types';
+import { volledigeTitel, type Domein, type Niveau, type Norm, type Relatie } from '@/lib/types';
 
 type NiveauFilter = 'alle' | Niveau;
 type SoortFilter = 'alle' | 'formeel' | 'informeel';
@@ -36,7 +36,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   const rijen = normen.filter((n) => {
     if (!zichtbaar(n)) return false;
     if (!zoek.trim()) return true;
-    const hooi = [n.code, n.titel, n.toepassing, ...n.organisaties].join(' ').toLowerCase();
+    const hooi = [n.code, n.titel, n.specificatie ?? '', n.afkorting ?? '', n.jaar ?? '', n.toepassing, ...n.organisaties].join(' ').toLowerCase();
     return hooi.includes(zoek.trim().toLowerCase());
   });
 
@@ -130,13 +130,18 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 <span className="label">{huidig.formeel ? 'Formele norm' : 'Informeel'}</span>
                 <span className={`label ${huidig.status}`}>{STATUS_LABEL[huidig.status]}</span>
               </div>
-              <p className="detail-code">{huidig.code}</p>
-              <h3>{huidig.titel}</h3>
+              <p className="detail-code">
+                {huidig.code}
+                {huidig.jaar && <span style={{ color: 'var(--tekst-3)' }}>:{huidig.jaar}</span>}
+              </p>
+              <h3>{volledigeTitel(huidig)}</h3>
               <div className="beleid">
                 <p className="klein" style={{ margin: 0 }}>Waarom relevant voor beleid</p>
                 <p>{huidig.beleidsrelevantie || 'Nog niet beschreven.'}</p>
               </div>
               <dl className="kenmerken">
+                {huidig.afkorting && <div><dt>Afkorting</dt><dd>{huidig.afkorting}</dd></div>}
+                {huidig.jaar && <div><dt>Jaartal (editie)</dt><dd>{huidig.jaar}</dd></div>}
                 <div><dt>Toepassing</dt><dd>{huidig.toepassing}</dd></div>
                 <div><dt>Organisaties</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
                 <div><dt>Domeinen</dt><dd>{domeinenVan(huidig)}</dd></div>
@@ -202,6 +207,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 <tr>
                   <th scope="col">Code</th>
                   <th scope="col">Titel</th>
+                  <th scope="col">Afkorting</th>
                   <th scope="col">Niveau</th>
                   <th scope="col">Soort</th>
                   <th scope="col">Domeinen</th>
@@ -214,8 +220,12 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
               <tbody>
                 {rijen.map((n) => (
                   <tr key={n.id}>
-                    <td className="mono nowrap" style={{ fontWeight: 500 }}>{n.code}</td>
-                    <td>{n.titel}</td>
+                    <td className="mono nowrap" style={{ fontWeight: 500 }}>
+                      {n.code}
+                      {n.jaar && <span style={{ color: 'var(--tekst-3)', fontWeight: 400 }}>:{n.jaar}</span>}
+                    </td>
+                    <td>{volledigeTitel(n)}</td>
+                    <td>{n.afkorting || '—'}</td>
                     <td className="nowrap"><span className="stip" style={{ background: NIVEAU_KLEUR[n.niveau] }} />{NIVEAU_LABEL[n.niveau]}</td>
                     <td className="nowrap">{n.formeel ? 'Formeel' : 'Informeel'}</td>
                     <td>{domeinenVan(n)}</td>
