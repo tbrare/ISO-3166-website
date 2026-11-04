@@ -1,19 +1,19 @@
 import type { Domein, Niveau, Norm, Relatie } from './types';
 
-export const WEB_B = 1000;
+export const WEB_B = 1200;
 export const WEB_H = 1000;
-const CX = 500;
+const CX = 600;
 const CY = 500;
 
 /** Afmetingen van een domeinlabel (in eenheden van het web). Alle labels zijn even breed. */
-export const DOMEIN_B = 160;
-const DOMEIN_H = 56;
+export const DOMEIN_B = 200;
+const DOMEIN_H = 64;
 /** Straal van de ISO 3166-cirkel in het midden, inclusief rand. */
 const KERN = 66;
 /** Zichtbare afstand tussen de ISO 3166-cirkel en de rand van elk domeinlabel. */
-const GAT = 130;
-/** Afstand van het midden tot de eerste ring normen, en de stap per volgende ring. */
-const STRAAL_NORM = 400;
+const GAT = 170;
+/** Ruimte tussen de buitenrand van een domeinlabel en de eerste normen, en de stap per volgende ring. */
+const RUIMTE_NORM = 90;
 const STAP = 72;
 
 const NIVEAU_VOLGORDE: Record<Niveau, number> = { internationaal: 0, europees: 1, nationaal: 2 };
@@ -107,10 +107,10 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
   const aantal = gesorteerd.length || 1;
   const sector = (2 * Math.PI) / aantal;
 
-  const plaats = (groep: Norm[], start: number, breedte: number, diepte: number, van: Punt, domeinHoek: number, domeinAfstand: number) => {
+  const plaats = (groep: Norm[], start: number, breedte: number, diepte: number, van: Punt, domeinHoek: number, domeinAfstand: number, straalNorm: number) => {
     const totaal = groep.reduce((som, n) => som + bladen(n.id), 0) || 1;
     let a = start;
-    const basis = STRAAL_NORM + diepte * STAP;
+    const basis = straalNorm + diepte * STAP;
     const krap = groep.length > 1 && (breedte * basis) / groep.length < 80;
     groep.forEach((norm, k) => {
       const w = (breedte * bladen(norm.id)) / totaal;
@@ -119,12 +119,12 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
       const p = opStraal(hoek, r);
       posities[norm.id] = p;
       if (diepte === 0) {
-        const c = opStraal(domeinHoek, (domeinAfstand + STRAAL_NORM) / 2);
+        const c = opStraal(domeinHoek, (domeinAfstand + straalNorm) / 2);
         takken.push({ id: `d-${norm.id}`, normId: norm.id, soort: 'domein', d: `M ${f(van.x)} ${f(van.y)} Q ${f(c.x)} ${f(c.y)} ${f(p.x)} ${f(p.y)}` });
       } else {
         takken.push({ id: `n-${norm.id}`, normId: norm.id, soort: 'norm', d: `M ${f(van.x)} ${f(van.y)} L ${f(p.x)} ${f(p.y)}` });
       }
-      plaats(kinderen.get(norm.id) ?? [], a, w, diepte + 1, p, domeinHoek, domeinAfstand);
+      plaats(kinderen.get(norm.id) ?? [], a, w, diepte + 1, p, domeinHoek, domeinAfstand, straalNorm);
       a += w;
     });
   };
@@ -140,7 +140,8 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
     const wortels = normen.filter((n) => n.hoofddomein_id === d.id && !ouder.has(n.id)).sort(sorteer);
     domeinKnopen.push({ id: d.id, naam: d.naam, punt, aantal: normen.filter((n) => n.hoofddomein_id === d.id).length });
     const bruikbaar = sector * 0.86;
-    plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, punt, hoek, afstand);
+    // Normen beginnen op vaste afstand buiten de rand van het domeinlabel
+    plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, punt, hoek, afstand, afstand + totRand + RUIMTE_NORM);
   });
 
   return { domeinKnopen, posities, takken };
