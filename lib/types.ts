@@ -14,6 +14,9 @@ export interface Norm {
   id: string;
   code: string;
   titel: string;
+  specificatie: string | null;
+  afkorting: string | null;
+  jaar: number | null;
   niveau: Niveau;
   type: NormType;
   formeel: boolean;
@@ -42,6 +45,16 @@ export interface Relatie {
 export type NormRij = Omit<Norm, 'extra_domein_ids'> & {
   norm_domeinen?: { domein_id: string }[] | null;
 };
+
+/** Volledige titel: hoofdtitel en specificatie, gescheiden door een gedachtestreepje. */
+export function volledigeTitel(n: Pick<Norm, 'titel' | 'specificatie'>): string {
+  return [n.titel, n.specificatie].filter((x) => x && x.trim()).join(' — ');
+}
+
+/** Code met jaartal, zoals ISO 9362:2022. */
+export function codeMetJaar(n: Pick<Norm, 'code' | 'jaar'>): string {
+  return n.jaar ? `${n.code}:${n.jaar}` : n.code;
+}
 
 export function naarNorm(rij: NormRij): Norm {
   const { norm_domeinen, ...rest } = rij;
