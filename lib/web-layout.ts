@@ -1,15 +1,20 @@
 import type { Domein, Niveau, Norm, Relatie } from './types';
 
 export const WEB_B = 1000;
-export const WEB_H = 800;
+export const WEB_H = 1000;
 const CX = 500;
-const CY = 400;
+const CY = 500;
 
-/** Afstand van het midden tot de domeinen en tot de normen. */
-export const STRAAL_DOMEIN = 195;
-const STRAAL_NORM = 345;
-const STRAAL_NORM_BINNEN = 315;
-const STRAAL_NORM_BUITEN = 372;
+/** Afmetingen van een domeinlabel (in eenheden van het web). Alle labels zijn even breed. */
+export const DOMEIN_B = 160;
+const DOMEIN_H = 56;
+/** Straal van de ISO 3166-cirkel in het midden, inclusief rand. */
+const KERN = 66;
+/** Zichtbare afstand tussen de ISO 3166-cirkel en de rand van elk domeinlabel. */
+const GAT = 130;
+/** Afstand van het midden tot de eerste ring normen, en de stap per volgende ring. */
+const STRAAL_NORM = 400;
+const STAP = 72;
 
 const NIVEAU_VOLGORDE: Record<Niveau, number> = { internationaal: 0, europees: 1, nationaal: 2 };
 
@@ -22,132 +27,123 @@ export interface DomeinKnoop {
   id: string;
   naam: string;
   punt: Punt;
-  hoek: number;
   aantal: number;
 }
 
 export interface Tak {
-  normId: string;
-  domeinId: string;
-  d: string;
-  extra: boolean;
-}
-
-export interface RelatieLijn {
   id: string;
+  normId: string;
   d: string;
-  label: Punt;
+  /** 'domein' = van domein naar norm, 'norm' = van norm naar een norm die erop voortbouwt */
+  soort: 'domein' | 'norm';
 }
 
 const f = (v: number) => v.toFixed(1);
 const opStraal = (hoek: number, r: number): Punt => ({ x: CX + r * Math.cos(hoek), y: CY + r * Math.sin(hoek) });
 
-/** Gebogen tak van een domein naar een norm. */
-function takPad(van: Punt, naar: Punt, hoek: number): string {
-  const c = opStraal(hoek, (STRAAL_DOMEIN + STRAAL_NORM) / 2 + 10);
-  return `M ${f(van.x)} ${f(van.y)} Q ${f(c.x)} ${f(c.y)} ${f(naar.x)} ${f(naar.y)}`;
+/**
+ * Bepaalt per norm de 'ouder': de norm waarnaar hij verwijst of waarop hij voortbouwt.
+ * Zo'n norm komt in het verlengde van zijn ouder te liggen. Kringverwijzingen worden doorbroken.
+ */
+function bepaalOuders(normen: Norm[], relaties: Relatie[], domeinIds: Set<string>) {
+  const perId = new Map(normen.map((n) => [n.id, n]));
+  const ouder = new Map<string, string>();
+  for (const r of relaties) {
+    if (r.van_norm_id === r.naar_norm_id) continue;
+    if (!perId.has(r.van_norm_id) || !perId.has(r.naar_norm_id)) continue;
+    if (!ouder.has(r.van_norm_id)) ouder.set(r.van_norm_id, r.naar_norm_id);
+  }
+  // Kringen doorbreken en ketens zonder geldig domein loskoppelen
+  for (let ronde = 0; ronde < 3; ronde++) {
+    for (const id of [...ouder.keys()]) {
+      const gezien = new Set([id]);
+      let huidig = ouder.get(id);
+      let wortel = id;
+      let kring = false;
+      while (huidig) {
+        if (gezien.has(huidig)) {
+          kring = true;
+          break;
+        }
+        gezien.add(huidig);
+        wortel = huidig;
+        huidig = ouder.get(huidig);
+      }
+      const wortelDomein = perId.get(wortel)?.hoofddomein_id;
+      if (kring || !wortelDomein || !domeinIds.has(wortelDomein)) ouder.delete(id);
+    }
+  }
+  return ouder;
 }
 
 /**
- * Getrapte indeling: ISO 3166 in het midden, daaromheen de domeinen,
- * en per domein een waaier van de normen die eronder vallen.
- * Elk domein krijgt een sector die meegroeit met het aantal normen.
+ * Getrapte indeling: ISO 3166 in het midden, daaromheen de domeinen op gelijke onderlinge hoek
+ * en met gelijke zichtbare afstand tot het midden, per domein een waaier van normen, en normen
+ * die naar een andere norm verwijzen in het verlengde van die norm.
  */
-export function berekenWeb(domeinen: Domein[], normen: Norm[]) {
+export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie[]) {
   const gesorteerd = [...domeinen].sort((a, b) => a.volgorde - b.volgorde);
+  const domeinIds = new Set(gesorteerd.map((d) => d.id));
+  const ouder = bepaalOuders(normen, relaties, domeinIds);
 
-  const perDomein: Record<string, Norm[]> = {};
-  for (const d of gesorteerd) perDomein[d.id] = [];
+  const sorteer = (a: Norm, b: Norm) =>
+    NIVEAU_VOLGORDE[a.niveau] - NIVEAU_VOLGORDE[b.niveau] || a.code.localeCompare(b.code);
+
+  const kinderen = new Map<string, Norm[]>();
   for (const n of normen) {
-    if (n.hoofddomein_id && perDomein[n.hoofddomein_id]) perDomein[n.hoofddomein_id].push(n);
+    const o = ouder.get(n.id);
+    if (o) kinderen.set(o, [...(kinderen.get(o) ?? []), n]);
   }
+  for (const lijst of kinderen.values()) lijst.sort(sorteer);
 
-  const gewicht = (id: string) => Math.max(2.2, perDomein[id].length);
-  const totaal = gesorteerd.reduce((som, d) => som + gewicht(d.id), 0) || 1;
+  const bladen = (id: string): number => {
+    const k = kinderen.get(id) ?? [];
+    return k.length === 0 ? 1 : k.reduce((som, n) => som + bladen(n.id), 0);
+  };
 
   const domeinKnopen: DomeinKnoop[] = [];
   const posities: Record<string, Punt> = {};
-  const hoekVanDomein: Record<string, number> = {};
   const takken: Tak[] = [];
+  const aantal = gesorteerd.length || 1;
+  const sector = (2 * Math.PI) / aantal;
 
-  // Start linksboven zodat de eerste domeinen bovenaan beginnen
-  let start = -Math.PI / 2 - (Math.PI * gewicht(gesorteerd[0]?.id ?? '')) / totaal;
-
-  for (const d of gesorteerd) {
-    const breedte = (2 * Math.PI * gewicht(d.id)) / totaal;
-    const midden = start + breedte / 2;
-    hoekVanDomein[d.id] = midden;
-    const punt = opStraal(midden, STRAAL_DOMEIN);
-    domeinKnopen.push({ id: d.id, naam: d.naam, punt, hoek: midden, aantal: perDomein[d.id].length });
-
-    const groep = [...perDomein[d.id]].sort(
-      (a, b) => NIVEAU_VOLGORDE[a.niveau] - NIVEAU_VOLGORDE[b.niveau] || a.code.localeCompare(b.code)
-    );
-    const marge = breedte * 0.12;
-    const bruikbaar = breedte - 2 * marge;
-    const m = groep.length;
-    // Liggen de labels te dicht op elkaar, dan om en om naar binnen en buiten
-    const ruimtePerNorm = m > 0 ? (bruikbaar * STRAAL_NORM) / m : Infinity;
-    const verspringen = ruimtePerNorm < 78;
-
+  const plaats = (groep: Norm[], start: number, breedte: number, diepte: number, van: Punt, domeinHoek: number, domeinAfstand: number) => {
+    const totaal = groep.reduce((som, n) => som + bladen(n.id), 0) || 1;
+    let a = start;
+    const basis = STRAAL_NORM + diepte * STAP;
+    const krap = groep.length > 1 && (breedte * basis) / groep.length < 80;
     groep.forEach((norm, k) => {
-      const hoek = m === 1 ? midden : start + marge + (bruikbaar * (k + 0.5)) / m;
-      const r = verspringen ? (k % 2 === 0 ? STRAAL_NORM_BINNEN : STRAAL_NORM_BUITEN) : STRAAL_NORM;
+      const w = (breedte * bladen(norm.id)) / totaal;
+      const hoek = a + w / 2;
+      const r = krap ? basis + (k % 2 === 0 ? -22 : 22) : basis;
       const p = opStraal(hoek, r);
       posities[norm.id] = p;
-      takken.push({ normId: norm.id, domeinId: d.id, d: takPad(punt, p, midden), extra: false });
+      if (diepte === 0) {
+        const c = opStraal(domeinHoek, (domeinAfstand + STRAAL_NORM) / 2);
+        takken.push({ id: `d-${norm.id}`, normId: norm.id, soort: 'domein', d: `M ${f(van.x)} ${f(van.y)} Q ${f(c.x)} ${f(c.y)} ${f(p.x)} ${f(p.y)}` });
+      } else {
+        takken.push({ id: `n-${norm.id}`, normId: norm.id, soort: 'norm', d: `M ${f(van.x)} ${f(van.y)} L ${f(p.x)} ${f(p.y)}` });
+      }
+      plaats(kinderen.get(norm.id) ?? [], a, w, diepte + 1, p, domeinHoek, domeinAfstand);
+      a += w;
     });
+  };
 
-    start += breedte;
-  }
-
-  // Stippellijnen vanuit aanvullende domeinen
-  for (const n of normen) {
-    const p = posities[n.id];
-    if (!p) continue;
-    for (const extraId of n.extra_domein_ids) {
-      const knoop = domeinKnopen.find((k) => k.id === extraId);
-      if (!knoop || extraId === n.hoofddomein_id) continue;
-      takken.push({ normId: n.id, domeinId: extraId, d: `M ${f(knoop.punt.x)} ${f(knoop.punt.y)} L ${f(p.x)} ${f(p.y)}`, extra: true });
-    }
-  }
+  gesorteerd.forEach((d, i) => {
+    const hoek = -Math.PI / 2 + i * sector;
+    // Afstand zo kiezen dat de verbindingslijn van ISO 3166 tot de rand van elk label even lang is
+    const c = Math.abs(Math.cos(hoek));
+    const s = Math.abs(Math.sin(hoek));
+    const totRand = Math.min(c > 1e-6 ? DOMEIN_B / 2 / c : Infinity, s > 1e-6 ? DOMEIN_H / 2 / s : Infinity);
+    const afstand = KERN + GAT + totRand;
+    const punt = opStraal(hoek, afstand);
+    const wortels = normen.filter((n) => n.hoofddomein_id === d.id && !ouder.has(n.id)).sort(sorteer);
+    domeinKnopen.push({ id: d.id, naam: d.naam, punt, aantal: normen.filter((n) => n.hoofddomein_id === d.id).length });
+    const bruikbaar = sector * 0.86;
+    plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, punt, hoek, afstand);
+  });
 
   return { domeinKnopen, posities, takken };
-}
-
-/** Gebogen lijn tussen twee normen, met de bocht naar buiten. */
-export function relatieLijn(relatie: Relatie, posities: Record<string, Punt>): RelatieLijn | null {
-  const a = posities[relatie.van_norm_id];
-  const b = posities[relatie.naar_norm_id];
-  if (!a || !b) return null;
-  const mx = (a.x + b.x) / 2;
-  const my = (a.y + b.y) / 2;
-  const vx = mx - CX;
-  const vy = my - CY;
-  const l = Math.hypot(vx, vy);
-  let cx: number;
-  let cy: number;
-  if (l < 120) {
-    // Normen aan weerszijden van het web: buig loodrecht op de verbindingslijn
-    const nx = -(b.y - a.y);
-    const ny = b.x - a.x;
-    const nl = Math.hypot(nx, ny) || 1;
-    cx = mx + (nx / nl) * 260;
-    cy = my + (ny / nl) * 260;
-  } else {
-    cx = mx + (vx / l) * 90;
-    cy = my + (vy / l) * 90;
-  }
-  const dx = b.x - cx;
-  const dy = b.y - cy;
-  const l2 = Math.hypot(dx, dy) || 1;
-  const ex = b.x - (dx / l2) * 14;
-  const ey = b.y - (dy / l2) * 14;
-  return {
-    id: relatie.id,
-    d: `M ${f(a.x)} ${f(a.y)} Q ${f(cx)} ${f(cy)} ${f(ex)} ${f(ey)}`,
-    label: { x: 0.25 * a.x + 0.5 * cx + 0.25 * b.x, y: 0.25 * a.y + 0.5 * cy + 0.25 * b.y + 16 },
-  };
 }
 
 export const MIDDEN: Punt = { x: CX, y: CY };
