@@ -20,6 +20,7 @@ export interface Norm {
   niveau: Niveau;
   type: NormType;
   formeel: boolean;
+  gebruikt_iso3166: boolean;
   hoofddomein_id: string | null;
   organisaties: string[];
   toepassing: string;
