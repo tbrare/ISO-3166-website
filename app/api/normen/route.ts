@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { naarNorm, type NormRij } from '@/lib/types';
+import { naarNorm, NORM_SELECT, type NormRij } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export async function GET() {
   });
   const [d, n, r] = await Promise.all([
     supabase.from('domeinen').select('id, naam, omschrijving, volgorde').order('volgorde'),
-    supabase.from('normen').select('*, norm_domeinen(domein_id)').eq('status', 'bevestigd').order('code'),
+    supabase.from('normen').select(NORM_SELECT).eq('status', 'bevestigd').order('code'),
     supabase.from('relaties').select('id, van_norm_id, naar_norm_id, type, status').eq('status', 'bevestigd'),
   ]);
   const fout = d.error ?? n.error ?? r.error;
