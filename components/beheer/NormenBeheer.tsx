@@ -398,7 +398,7 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
               <select id="status" value={f.status} onChange={(e) => zet('status', e.target.value as Status)}>
                 {STATUSSEN.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
-              <span className="hulp">Concepten zijn alleen zichtbaar voor beheerders.</span>
+              <span className="hulp">Alleen bevestigde normen verschijnen op de publieke site.</span>
             </div>
           </div>
 
