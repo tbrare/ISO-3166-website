@@ -58,7 +58,7 @@ h1, h2, h3 { line-height: 1.2; }
 .chip[aria-pressed='true'] { background: var(--inkt); color: #fff; }
 .chip.paars { border-color: var(--paars); color: var(--paars); }
 .chip.paars[aria-pressed='true'] { background: var(--paars); color: #fff; }
-.web { position: relative; width: 100%; aspect-ratio: 5 / 4; margin-top: 8px; }
+.web { position: relative; width: 100%; max-width: 900px; margin: 8px auto 0; aspect-ratio: 1 / 1; }
 .web svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .web-midden { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 112px; height: 112px; border-radius: 50%; background: var(--inkt); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 0 0 8px #e8ecf2; }
 .web-midden b { font-family: var(--mono); font-weight: 500; font-size: 18px; }
@@ -147,7 +147,8 @@ legend { font-size: 14px; font-weight: 600; padding: 0 6px; }
 .voet { max-width: 1320px; margin: 0 auto; padding: 24px 24px 48px; font-size: 13px; color: var(--tekst-3); }
 
 /* ---------- Domeinknopen in het getrapte web ---------- */
-.domein-knoop { position: absolute; transform: translate(-50%, -50%); min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 22px; border: 2px solid var(--inkt); background: #fff; color: var(--inkt); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; z-index: 1; }
+.domein-knoop { position: absolute; transform: translate(-50%, -50%); min-height: 44px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 22px; border: 2px solid var(--inkt); background: #fff; color: var(--inkt); font: inherit; font-size: clamp(11px, 1.3vw, 13px); font-weight: 600; line-height: 1.25; text-align: center; cursor: pointer; transition: opacity 0.2s; z-index: 1; }
+.domein-naam { min-width: 0; overflow-wrap: anywhere; }
 .domein-knoop[aria-pressed='true'] { background: var(--inkt); color: #fff; }
 .domein-aantal { font-family: var(--mono); font-size: 12px; font-weight: 500; padding: 1px 7px; border-radius: 10px; background: #e8ecf2; color: var(--inkt); }
 .knoop { z-index: 2; }
