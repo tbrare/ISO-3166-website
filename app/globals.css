@@ -58,20 +58,20 @@ h1, h2, h3 { line-height: 1.2; }
 .chip[aria-pressed='true'] { background: var(--inkt); color: #fff; }
 .chip.paars { border-color: var(--paars); color: var(--paars); }
 .chip.paars[aria-pressed='true'] { background: var(--paars); color: #fff; }
-.web { position: relative; width: 100%; max-width: 1000px; margin: 8px auto 0; aspect-ratio: 6 / 5; }
+.web { position: relative; width: 100%; max-width: 1000px; margin: 8px auto 0; aspect-ratio: 6 / 5; container: web / inline-size; }
 .web svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .web-midden { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 112px; height: 112px; border-radius: 50%; background: var(--inkt); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 0 0 8px #e8ecf2; }
 .web-midden b { font-family: var(--mono); font-weight: 500; font-size: 18px; }
 .web-midden span { font-size: 12px; color: #cbd2dc; }
-.knoop { position: absolute; transform: translate(-50%, -14px); background: transparent; border: none; padding: 4px; min-width: 44px; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit; transition: opacity 0.2s; }
-.knoop-stip { width: 16px; height: 16px; border-radius: 50%; border: 3px solid; background: #fff; }
+.knoop { position: absolute; transform: translate(-50%, calc(-0.7cqw - 2px)); background: transparent; border: none; padding: 2px 4px 4px; min-width: 44px; display: flex; flex-direction: column; align-items: center; gap: 0.2cqw; cursor: pointer; font: inherit; transition: opacity 0.2s; z-index: 2; }
+.knoop-stip { width: 1.4cqw; height: 1.4cqw; min-width: 10px; min-height: 10px; border-radius: 50%; border: 3px solid; background: #fff; }
 .knoop-stip.informeel { border-radius: 3px; }
-.knoop-stip.onzeker { border-style: dashed; }
-.knoop-label { font-family: var(--mono); font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 6px; border-radius: 4px; background: #fff; color: var(--inkt); }
+.knoop-stip.indirect { border-style: dashed; }
+.knoop-label { font-family: var(--mono); font-size: clamp(8px, 1.2cqw, 15px); line-height: 1.3; font-weight: 500; white-space: nowrap; padding: 0 0.4cqw; border-radius: 4px; background: rgba(255, 255, 255, 0.9); color: var(--inkt); }
+.knoop-sub { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 14cqw; font-size: clamp(7px, 1.05cqw, 13px); line-height: 1.3; color: var(--tekst-2); text-align: center; background: rgba(255, 255, 255, 0.85); border-radius: 3px; padding: 0 2px; }
 .knoop[aria-pressed='true'] .knoop-label { background: var(--inkt); color: #fff; }
 .knoop:focus-visible { outline: 3px solid var(--blauw); outline-offset: 2px; border-radius: 6px; }
-.extra { font-size: 10px; font-weight: 600; margin-left: 4px; color: #c4b5fd; }
-.knoop[aria-pressed='false'] .extra { color: var(--paars); }
+@container web (max-width: 560px) { .knoop-sub { display: none; } }
 .legenda { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 12px; font-size: 13px; color: var(--tekst-2); }
 .legenda span { display: inline-flex; align-items: center; gap: 8px; }
 .legenda i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; }
@@ -147,7 +147,7 @@ legend { font-size: 14px; font-weight: 600; padding: 0 6px; }
 .voet { max-width: 1320px; margin: 0 auto; padding: 24px 24px 48px; font-size: 13px; color: var(--tekst-3); }
 
 /* ---------- Domeinknopen in het getrapte web ---------- */
-.domein-knoop { position: absolute; transform: translate(-50%, -50%); min-height: 44px; padding: 6px 14px; display: flex; align-items: center; justify-content: center; border-radius: 22px; border: 2px solid var(--inkt); background: #fff; color: var(--inkt); font: inherit; font-size: clamp(11px, 1.3vw, 13px); font-weight: 600; line-height: 1.25; text-align: center; cursor: pointer; transition: opacity 0.2s; z-index: 1; }
+.domein-knoop { position: absolute; transform: translate(-50%, -50%); min-height: 44px; padding: 6px 14px; display: flex; align-items: center; justify-content: center; border-radius: 22px; border: 2px solid var(--inkt); background: #fff; color: var(--inkt); font: inherit; font-size: clamp(9px, 1.3cqw, 15px); font-weight: 600; line-height: 1.25; text-align: center; cursor: pointer; transition: opacity 0.2s; z-index: 1; }
 .domein-naam { min-width: 0; overflow-wrap: normal; word-break: normal; hyphens: manual; }
 .domein-knoop[aria-pressed='true'] { background: var(--inkt); color: #fff; }
 .domein-aantal { position: absolute; top: -9px; right: 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; line-height: 1.4; padding: 1px 7px; border-radius: 10px; background: #e8ecf2; color: var(--inkt); border: 1px solid #fff; }
