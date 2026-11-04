@@ -99,11 +99,12 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>
             Vanuit ISO 3166 vertakt het web naar de toepassingsdomeinen, en vanuit elk domein naar de normen die er gebruik van maken. Klik
-            op een domein om alleen die waaier te tonen, of op een norm voor details.
+            op een domein om alleen die waaier te tonen, of op een norm voor details. Een norm die naar een andere norm verwijst, ligt in het verlengde daarvan.
           </p>
           <Spinnenweb
             domeinen={domeinen}
             normen={normen}
+            relaties={relaties}
             geselecteerd={geselecteerd}
             actiefDomein={actiefDomein}
             onKiesDomein={setActiefDomein}
@@ -122,7 +123,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />Nationaal</span>
             <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
-            <span><b style={{ fontSize: 11, color: '#6D28D9' }}>+1</b>Ook in ander domein</span>
+            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />Lijn tussen normen: de buitenste norm verwijst naar of bouwt voort op de binnenste</span>
           </div>
         </div>
 
