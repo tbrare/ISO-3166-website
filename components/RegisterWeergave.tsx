@@ -125,6 +125,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />Lijn tussen normen: de buitenste norm verwijst naar of bouwt voort op de binnenste</span>
             <span><i style={{ border: '3px dashed #4B5563' }} />Gebruikt ISO 3166 indirect, via een andere norm</span>
+            <span><b className="mono" style={{ fontSize: 11, outline: '1px dashed #8A94A3', outlineOffset: 1, padding: '0 4px' }}>CODE</b>Herhaald als verwijzing (hoofddomein elders)</span>
           </div>
         </div>
 
