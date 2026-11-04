@@ -4,15 +4,15 @@ import { naarNorm, type NormRij } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-/** Open data: alle gepubliceerde normen, domeinen en relaties als JSON. */
+/** Open data: alle bevestigde normen, domeinen en relaties als JSON. */
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false },
   });
   const [d, n, r] = await Promise.all([
     supabase.from('domeinen').select('id, naam, omschrijving, volgorde').order('volgorde'),
-    supabase.from('normen').select('*, norm_domeinen(domein_id)').order('code'),
-    supabase.from('relaties').select('id, van_norm_id, naar_norm_id, type, status'),
+    supabase.from('normen').select('*, norm_domeinen(domein_id)').eq('status', 'bevestigd').order('code'),
+    supabase.from('relaties').select('id, van_norm_id, naar_norm_id, type, status').eq('status', 'bevestigd'),
   ]);
   const fout = d.error ?? n.error ?? r.error;
   if (fout) return NextResponse.json({ fout: fout.message }, { status: 500 });
