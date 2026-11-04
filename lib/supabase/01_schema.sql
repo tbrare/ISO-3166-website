@@ -29,6 +29,7 @@ create table if not exists public.normen (
   organisaties       text[] not null default '{}',
   toepassing         text not null,
   beleidsrelevantie  text,
+  gebruikt_iso3166   boolean not null default true,
   iso3166_delen      text[] not null default '{}',
   element            text,
   afwijkingen        text,
