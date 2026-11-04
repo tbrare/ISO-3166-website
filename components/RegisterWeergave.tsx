@@ -18,7 +18,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   const [geselecteerd, setGeselecteerd] = useState<string | null>(normen[0]?.id ?? null);
   const [niveau, setNiveau] = useState<NiveauFilter>('alle');
   const [soort, setSoort] = useState<SoortFilter>('alle');
-  const [toonRelaties, setToonRelaties] = useState(true);
   const [actiefDomein, setActiefDomein] = useState<string | null>(null);
   const [zoek, setZoek] = useState('');
 
@@ -81,9 +80,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
         <div className="kaart web-kaart">
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
             <h2 style={{ margin: 0, fontSize: 22 }}>Spinnenweb</h2>
-            <button type="button" className="chip paars" aria-pressed={toonRelaties} onClick={() => setToonRelaties(!toonRelaties)}>
-              Relaties tussen normen
-            </button>
           </div>
           <div className="filters">
             <div className="chipgroep" role="group" aria-label="Filter op niveau">
@@ -103,17 +99,15 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>
             Vanuit ISO 3166 vertakt het web naar de toepassingsdomeinen, en vanuit elk domein naar de normen die er gebruik van maken. Klik
-            op een domein om alleen die waaier te tonen, of op een norm voor details. Paarse pijlen zijn directe verwijzingen tussen normen.
+            op een domein om alleen die waaier te tonen, of op een norm voor details.
           </p>
           <Spinnenweb
             domeinen={domeinen}
             normen={normen}
-            relaties={relaties}
             geselecteerd={geselecteerd}
             actiefDomein={actiefDomein}
             onKiesDomein={setActiefDomein}
             zichtbaar={zichtbaar}
-            toonRelaties={toonRelaties}
             onKies={kies}
           />
           {actiefDomein && (
@@ -128,8 +122,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />Nationaal</span>
             <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
             <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
-            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #6D28D9' }} />Directe relatie</span>
-            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px dashed #8A94A3' }} />Ook in ander domein</span>
+            <span><b style={{ fontSize: 11, color: '#6D28D9' }}>+1</b>Ook in ander domein</span>
           </div>
         </div>
 
@@ -155,6 +148,24 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 <div><dt>Toepassing</dt><dd>{huidig.toepassing}</dd></div>
                 <div><dt>Organisaties</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
                 <div><dt>Domeinen</dt><dd>{domeinenVan(huidig)}</dd></div>
+                <div>
+                  <dt>Verwijzingen naar ISO 3166 in de tekst</dt>
+                  <dd>
+                    {huidig.verwijzingen.length === 0 ? (
+                      <span style={{ color: 'var(--tekst-3)' }}>Nog niet vastgelegd</span>
+                    ) : (
+                      <ul className="relaties-lijst" style={{ gap: 10, marginTop: 4 }}>
+                        {huidig.verwijzingen.map((v, i) => (
+                          <li key={v.id ?? i} style={{ display: 'block' }}>
+                            <span className="mono" style={{ fontWeight: 500 }}>§ {v.paragraaf_nummer}</span>
+                            {v.paragraaf_titel && <span style={{ fontWeight: 600 }}> {v.paragraaf_titel}</span>}
+                            {v.toelichting && <div style={{ color: 'var(--tekst-2)', marginTop: 2 }}>{v.toelichting}</div>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </dd>
+                </div>
                 <div>
                   <dt>Directe relaties</dt>
                   <dd>
