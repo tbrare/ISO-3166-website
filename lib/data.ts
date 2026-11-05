@@ -1,5 +1,5 @@
 import { maakServerClient } from './supabase/server';
-import { naarNorm, NORM_SELECT, type Domein, type Norm, type NormRij, type Relatie } from './types';
+import { naarNorm, NORM_SELECT, NORM_SELECT_PUBLIEK, type Domein, type Norm, type NormRij, type Relatie } from './types';
 
 /** Haalt alles op wat de site nodig heeft. RLS bepaalt wat zichtbaar is. */
 export async function haalRegisterOp(opties: { alleenBevestigd?: boolean } = {}): Promise<{
@@ -9,7 +9,10 @@ export async function haalRegisterOp(opties: { alleenBevestigd?: boolean } = {})
   fout: string | null;
 }> {
   const supabase = await maakServerClient();
-  let normenQuery = supabase.from('normen').select(NORM_SELECT).order('code');
+  let normenQuery = supabase
+    .from('normen')
+    .select(opties.alleenBevestigd ? NORM_SELECT_PUBLIEK : NORM_SELECT)
+    .order('code');
   let relatiesQuery = supabase.from('relaties').select('id, van_norm_id, naar_norm_id, type, status');
   if (opties.alleenBevestigd) {
     normenQuery = normenQuery.eq('status', 'bevestigd');
@@ -21,7 +24,7 @@ export async function haalRegisterOp(opties: { alleenBevestigd?: boolean } = {})
     relatiesQuery,
   ]);
   const fout = d.error?.message ?? n.error?.message ?? r.error?.message ?? null;
-  const normen = ((n.data ?? []) as NormRij[]).map(naarNorm);
+  const normen = ((n.data ?? []) as unknown as NormRij[]).map(naarNorm);
   const zichtbaar = new Set(normen.map((x) => x.id));
   const relaties = ((r.data ?? []) as Relatie[]).filter(
     (x) => zichtbaar.has(x.van_norm_id) && zichtbaar.has(x.naar_norm_id)
