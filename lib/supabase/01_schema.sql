@@ -108,10 +108,10 @@ alter table public.relaties      enable row level security;
 alter table public.beheerders    enable row level security;
 alter table public.iso3166_verwijzingen enable row level security;
 
--- Verwijzingen zijn zichtbaar als de bijbehorende norm zichtbaar is
+-- Verwijzingen zijn alleen zichtbaar voor beheerders
 drop policy if exists "verwijzingen lezen" on public.iso3166_verwijzingen;
 create policy "verwijzingen lezen" on public.iso3166_verwijzingen for select
-  using (exists (select 1 from public.normen n where n.id = norm_id));
+  using (public.is_beheerder());
 
 drop policy if exists "verwijzingen beheren" on public.iso3166_verwijzingen;
 create policy "verwijzingen beheren" on public.iso3166_verwijzingen for all to authenticated
