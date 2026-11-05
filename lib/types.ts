@@ -61,6 +61,9 @@ export type NormRij = Omit<Norm, 'extra_domein_ids' | 'verwijzingen'> & {
 export const NORM_SELECT =
   '*, norm_domeinen(domein_id), iso3166_verwijzingen(id, paragraaf_nummer, paragraaf_titel, toelichting, volgorde)';
 
+/** Publieke variant: zonder de paragraafverwijzingen naar ISO 3166 (die zijn alleen voor beheer). */
+export const NORM_SELECT_PUBLIEK = '*, norm_domeinen(domein_id)';
+
 /** Volledige titel: hoofdtitel en specificatie, gescheiden door een gedachtestreepje. */
 export function volledigeTitel(n: Pick<Norm, 'titel' | 'specificatie'>): string {
   return [n.titel, n.specificatie].filter((x) => x && x.trim()).join(' — ');
