@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; actief?: 'normen' | 'domeinen' }) {
+export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; actief?: 'normen' | 'domeinen' | 'web' | 'over' }) {
   return (
     <header className="kop">
       <div className="kop-binnen">
@@ -23,10 +23,13 @@ export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; 
             </form>
           </nav>
         ) : (
-          <nav className="menu" aria-label="Hoofdmenu">
-            <a href="#web">Spinnenweb</a>
-            <a href="#register">Register</a>
-            <a href="#iso3166">Over ISO 3166</a>
+          <nav className="menu publiek" aria-label="Hoofdmenu">
+            <Link href="/" className={actief === 'web' ? 'actief' : undefined} aria-current={actief === 'web' ? 'page' : undefined}>
+              Spinnenweb
+            </Link>
+            <Link href="/over-iso3166" className={actief === 'over' ? 'actief' : undefined} aria-current={actief === 'over' ? 'page' : undefined}>
+              Over ISO 3166
+            </Link>
             <Link href="/beheer" className="knop-licht">Beheer</Link>
           </nav>
         )}
