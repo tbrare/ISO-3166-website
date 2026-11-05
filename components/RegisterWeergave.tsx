@@ -19,7 +19,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   const [niveau, setNiveau] = useState<NiveauFilter>('alle');
   const [soort, setSoort] = useState<SoortFilter>('alle');
   const [actiefDomein, setActiefDomein] = useState<string | null>(null);
-  const [zoek, setZoek] = useState('');
 
   const domeinNaam = useMemo(() => Object.fromEntries(domeinen.map((d) => [d.id, d.naam])), [domeinen]);
   const perId = useMemo(() => Object.fromEntries(normen.map((n) => [n.id, n])), [normen]);
@@ -36,12 +35,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
       .map((id) => domeinNaam[id])
       .join(', ') || '—';
 
-  const rijen = normen.filter((n) => {
-    if (!zichtbaar(n) || !inDomein(n)) return false;
-    if (!zoek.trim()) return true;
-    const hooi = [n.code, n.titel, n.specificatie ?? '', n.afkorting ?? '', n.jaar ?? '', n.toepassing, ...n.organisaties].join(' ').toLowerCase();
-    return hooi.includes(zoek.trim().toLowerCase());
-  });
 
   const organisaties = new Set(normen.flatMap((n) => n.organisaties.map((o) => o.trim()).filter(Boolean)));
   const huidig = geselecteerd ? perId[geselecteerd] : undefined;
@@ -159,24 +152,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                       : `Indirect${huidigeRelaties.some((x) => x.uit) ? `, via ${huidigeRelaties.filter((x) => x.uit).map((x) => x.ander.code).join(', ')}` : ''}`}
                   </dd>
                 </div>
-                {huidig.gebruikt_iso3166 && <div>
-                  <dt>Verwijzingen naar ISO 3166 in de tekst</dt>
-                  <dd>
-                    {huidig.verwijzingen.length === 0 ? (
-                      <span style={{ color: 'var(--tekst-3)' }}>Nog niet vastgelegd</span>
-                    ) : (
-                      <ul className="relaties-lijst" style={{ gap: 10, marginTop: 4 }}>
-                        {huidig.verwijzingen.map((v, i) => (
-                          <li key={v.id ?? i} style={{ display: 'block' }}>
-                            <span className="mono" style={{ fontWeight: 500 }}>§ {v.paragraaf_nummer}</span>
-                            {v.paragraaf_titel && <span style={{ fontWeight: 600 }}> {v.paragraaf_titel}</span>}
-                            {v.toelichting && <div style={{ color: 'var(--tekst-2)', marginTop: 2 }}>{v.toelichting}</div>}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </dd>
-                </div>}
                 <div>
                   <dt>Directe relaties</dt>
                   <dd>
@@ -220,61 +195,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
         </aside>
       </section>
 
-      <section id="register" className="sectie">
-        <div className="kaart">
-          <div className="tabel-kop">
-            <div>
-              <h2>Register</h2>
-              <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>{rijen.length} resultaten</p>
-            </div>
-            <div className="veld" style={{ flex: '0 1 360px', minWidth: 0 }}>
-              <label htmlFor="zoek">Zoek op code, titel, organisatie of toepassing</label>
-              <input id="zoek" type="search" value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder="bijv. IBAN, Kadaster, paspoort" />
-            </div>
-          </div>
-          <div className="tabel-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Code</th>
-                  <th scope="col">Titel</th>
-                  <th scope="col">Afkorting</th>
-                  <th scope="col">Niveau</th>
-                  <th scope="col">Soort</th>
-                  <th scope="col">ISO 3166</th>
-                  <th scope="col">Domeinen</th>
-                  <th scope="col">Organisaties</th>
-                  <th scope="col">Toepassing</th>
-                  <th scope="col"><span className="verborgen">Actie</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rijen.map((n) => (
-                  <tr key={n.id}>
-                    <td className="mono nowrap" style={{ fontWeight: 500 }}>
-                      {n.code}
-                      {n.jaar && <span style={{ color: 'var(--tekst-3)', fontWeight: 400 }}>:{n.jaar}</span>}
-                    </td>
-                    <td>{volledigeTitel(n)}</td>
-                    <td>{n.afkorting || '—'}</td>
-                    <td className="nowrap"><span className="stip" style={{ background: NIVEAU_KLEUR[n.niveau] }} />{NIVEAU_LABEL[n.niveau]}</td>
-                    <td className="nowrap">{n.formeel ? 'Formeel' : 'Informeel'}</td>
-                    <td className="nowrap">{n.gebruikt_iso3166 ? 'Direct' : 'Indirect'}</td>
-                    <td>{domeinenVan(n)}</td>
-                    <td>{n.organisaties.join(', ') || '—'}</td>
-                    <td>{n.toepassing}</td>
-                    <td>
-                      <a href="#detail" onClick={() => kies(n.id)} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, fontWeight: 600 }}>
-                        Bekijk<span className="verborgen"> {n.code}</span>
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
