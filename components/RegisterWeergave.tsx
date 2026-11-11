@@ -65,14 +65,14 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
           <div className="cijfer"><b>{normen.length}</b><span>normen en codelijsten</span></div>
           <div className="cijfer"><b>{organisaties.size}</b><span>organisaties</span></div>
           <div className="cijfer"><b>{relaties.length}</b><span>directe relaties tussen normen</span></div>
-          <div className="cijfer"><b>{domeinen.length}</b><span>toepassingsdomeinen</span></div>
+          <div className="cijfer"><b>{domeinen.filter((d) => normen.some((n) => n.hoofddomein_id === d.id)).length}</b><span>toepassingsdomeinen</span></div>
         </div>
       </section>
 
       <section id="web" className="sectie web-rij">
         <div className="kaart web-kaart">
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 22 }}>Spinnenweb</h2>
+            <h2 style={{ margin: 0, fontSize: 22 }}>Netwerkkaart</h2>
           </div>
           <div className="filters">
             <div className="chipgroep" role="group" aria-label="Filter op niveau">
@@ -175,6 +175,25 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 <dl className="kenmerken">
                   <div><dt>Type</dt><dd>{huidig.type}</dd></div>
                   <div><dt>Gebruikt deel van ISO 3166</dt><dd className="mono">{huidig.iso3166_delen.join(', ') || '—'}</dd></div>
+                  {huidig.gebruikt_iso3166 && (
+                    <div>
+                      <dt>Verwijzingen naar ISO 3166</dt>
+                      <dd>
+                        {huidig.verwijzingen.length === 0 ? (
+                          '—'
+                        ) : (
+                          <ul className="relaties-lijst">
+                            {huidig.verwijzingen.map((v, i) => (
+                              <li key={v.id ?? i}>
+                                <span className="mono">§ {v.paragraaf_nummer}</span>
+                                {v.paragraaf_titel && <span>{v.paragraaf_titel}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </dd>
+                    </div>
+                  )}
                   <div><dt>Waar in de norm</dt><dd>{huidig.element || '—'}</dd></div>
                   <div><dt>Afwijkingen van ISO 3166</dt><dd>{huidig.afwijkingen || '—'}</dd></div>
                   <div><dt>Verwijst naar editie</dt><dd>{huidig.iso3166_editie || '—'}</dd></div>
