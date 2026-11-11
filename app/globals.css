@@ -172,3 +172,12 @@ legend { font-size: 14px; font-weight: 600; padding: 0 6px; }
 .domein-knoop[aria-pressed='true'] .domein-aantal { background: #fff; }
 .knoop { z-index: 2; }
 .web-midden { z-index: 1; }
+
+/* ---------- Paragraafverwijzingen: nummer en titel naast elkaar ---------- */
+.paragrafen { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; row-gap: 6px; }
+.paragrafen li { display: contents; }
+.paragraaf-nr { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Tabellen op de Over-pagina ---------- */
+.tekst-pagina h3 { margin: 28px 0 8px; font-size: 18px; }
+.tekst-pagina .bron { font-size: 14px; color: var(--tekst-3); }
