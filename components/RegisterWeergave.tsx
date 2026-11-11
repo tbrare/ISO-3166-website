@@ -182,11 +182,11 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                         {huidig.verwijzingen.length === 0 ? (
                           '—'
                         ) : (
-                          <ul className="relaties-lijst">
+                          <ul className="paragrafen">
                             {huidig.verwijzingen.map((v, i) => (
                               <li key={v.id ?? i}>
-                                <span className="mono">§ {v.paragraaf_nummer}</span>
-                                {v.paragraaf_titel && <span>{v.paragraaf_titel}</span>}
+                                <span className="paragraaf-nr">§ {v.paragraaf_nummer}</span>
+                                <span>{v.paragraaf_titel || ''}</span>
                               </li>
                             ))}
                           </ul>
