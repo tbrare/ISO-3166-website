@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Spinnenweb from './Spinnenweb';
-import { NIVEAU_KLEUR, NIVEAU_LABEL, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD } from '@/lib/labels';
+import { NIVEAU_KLEUR, NIVEAU_LABEL, NORM_TYPE_UITLEG, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD } from '@/lib/labels';
 import { volledigeTitel, type Domein, type Niveau, type Norm, type Relatie } from '@/lib/types';
 
 type NiveauFilter = 'alle' | Niveau;
@@ -115,7 +115,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             <span><i style={{ background: NIVEAU_KLEUR.europees }} />Europees</span>
             <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />Nationaal</span>
             <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
-            <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (codelijst, standaard)</span>
+            <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (NPR, NTA, codelijst, standaard)</span>
             <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />Lijn tussen normen: de buitenste norm verwijst naar of bouwt voort op de binnenste</span>
             <span><i style={{ border: '3px dashed #4B5563' }} />Gebruikt ISO 3166 indirect, via een andere norm</span>
             <span><b className="mono" style={{ fontSize: 11, outline: '1px dashed #8A94A3', outlineOffset: 1, padding: '0 4px' }}>CODE</b>Herhaald als verwijzing (hoofddomein elders)</span>
@@ -173,7 +173,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
               <details className="techniek">
                 <summary>Technische details</summary>
                 <dl className="kenmerken">
-                  <div><dt>Type</dt><dd>{huidig.type}</dd></div>
+                  <div><dt>Type</dt><dd>{NORM_TYPE_UITLEG[huidig.type] ? `${huidig.type} (${NORM_TYPE_UITLEG[huidig.type]})` : huidig.type}</dd></div>
                   <div><dt>Gebruikt deel van ISO 3166</dt><dd className="mono">{huidig.iso3166_delen.join(', ') || '—'}</dd></div>
                   {huidig.gebruikt_iso3166 && (
                     <div>
