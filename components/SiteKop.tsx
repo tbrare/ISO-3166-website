@@ -25,7 +25,7 @@ export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; 
         ) : (
           <nav className="menu publiek" aria-label="Hoofdmenu">
             <Link href="/" className={actief === 'web' ? 'actief' : undefined} aria-current={actief === 'web' ? 'page' : undefined}>
-              Spinnenweb
+              Netwerkkaart
             </Link>
             <Link href="/over-iso3166" className={actief === 'over' ? 'actief' : undefined} aria-current={actief === 'over' ? 'page' : undefined}>
               Over ISO 3166
