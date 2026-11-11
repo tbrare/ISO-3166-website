@@ -3,7 +3,7 @@ import NormenBeheer from '@/components/beheer/NormenBeheer';
 import { haalRegisterOp } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Beheer normen – iso3166.nl' };
+export const metadata = { title: 'Beheer normen – ISO 3166 Landencodes' };
 
 export default async function BeheerPagina() {
   const { domeinen, normen, relaties, fout } = await haalRegisterOp();
