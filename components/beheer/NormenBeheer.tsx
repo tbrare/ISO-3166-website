@@ -8,6 +8,7 @@ import {
   ISO3166_DELEN,
   NIVEAU_LABEL,
   NIVEAUS,
+  NORM_TYPE_UITLEG,
   NORM_TYPES,
   RELATIE_LABEL,
   RELATIE_TYPES,
@@ -298,7 +299,7 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
             <div className="veld">
               <label htmlFor="type">Type</label>
               <select id="type" value={f.type} onChange={(e) => zet('type', e.target.value as NormType)}>
-                {NORM_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {NORM_TYPES.map((t) => <option key={t} value={t}>{NORM_TYPE_UITLEG[t] ? `${t} – ${NORM_TYPE_UITLEG[t]}` : t}</option>)}
               </select>
               <span className="hulp">Wordt getoond als: <b>{FORMELE_TYPES.includes(f.type) ? 'formele norm (rond)' : 'informeel (vierkant)'}</b></span>
             </div>
