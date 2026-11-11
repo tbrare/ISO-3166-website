@@ -5,8 +5,7 @@ export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; 
     <header className="kop">
       <div className="kop-binnen">
         <Link href="/" className="logo">
-          <span className="logo-code">NL · NLD · 528</span>
-          <span className="logo-naam">iso3166.nl</span>
+          <span className="logo-naam">ISO 3166 Landencodes</span>
           {beheer && <span className="logo-sub">Beheer</span>}
         </Link>
         {beheer ? (
