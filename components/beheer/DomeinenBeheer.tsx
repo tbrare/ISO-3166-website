@@ -96,7 +96,7 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
     <div className="sectie" style={{ maxWidth: 1000, paddingTop: 32, paddingBottom: 48 }}>
       <h1 style={{ margin: 0, fontSize: 26 }}>Domeinen</h1>
       <p style={{ margin: '6px 0 0', color: 'var(--tekst-2)' }}>
-        Domeinen zijn de draden van het spinnenweb. De volgorde hieronder bepaalt de volgorde rond ISO 3166, met de klok mee vanaf rechts.
+        Domeinen zijn de takken van de netwerkkaart. Alleen domeinen met minimaal één norm worden getoond. De volgorde hieronder bepaalt de volgorde rond ISO 3166, met de klok mee vanaf rechts.
       </p>
 
       {melding && <p className="foutmelding" role="status" style={{ marginTop: 20 }}>{melding}</p>}
