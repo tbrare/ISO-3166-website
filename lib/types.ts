@@ -39,7 +39,8 @@ export interface Iso3166Verwijzing {
   id?: string;
   paragraaf_nummer: string;
   paragraaf_titel: string | null;
-  toelichting: string | null;
+  /** Alleen beschikbaar voor beheerders */
+  toelichting?: string | null;
   volgorde: number;
 }
 
@@ -61,8 +62,9 @@ export type NormRij = Omit<Norm, 'extra_domein_ids' | 'verwijzingen'> & {
 export const NORM_SELECT =
   '*, norm_domeinen(domein_id), iso3166_verwijzingen(id, paragraaf_nummer, paragraaf_titel, toelichting, volgorde)';
 
-/** Publieke variant: zonder de paragraafverwijzingen naar ISO 3166 (die zijn alleen voor beheer). */
-export const NORM_SELECT_PUBLIEK = '*, norm_domeinen(domein_id)';
+/** Publieke variant: paragraafnummer en -titel wel, de toelichting niet (die is alleen voor beheer). */
+export const NORM_SELECT_PUBLIEK =
+  '*, norm_domeinen(domein_id), iso3166_verwijzingen(id, paragraaf_nummer, paragraaf_titel, volgorde)';
 
 /** Volledige titel: hoofdtitel en specificatie, gescheiden door een gedachtestreepje. */
 export function volledigeTitel(n: Pick<Norm, 'titel' | 'specificatie'>): string {
