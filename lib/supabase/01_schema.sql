@@ -23,7 +23,7 @@ create table if not exists public.normen (
   afkorting          text,
   jaar               integer check (jaar between 1900 and 2100),
   niveau             text not null check (niveau in ('internationaal', 'europees', 'nationaal')),
-  type               text not null check (type in ('ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO', 'Codelijst', 'Overig')),
+  type               text not null check (type in ('ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO', 'NPR', 'NTA', 'Codelijst', 'Overig')),
   formeel            boolean generated always as (type in ('ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO')) stored,
   hoofddomein_id     uuid references public.domeinen(id) on delete restrict,
   organisaties       text[] not null default '{}',
