@@ -1,6 +1,6 @@
 export type Niveau = 'internationaal' | 'europees' | 'nationaal';
 export type Status = 'concept' | 'te_verifieren' | 'bevestigd';
-export type NormType = 'ISO' | 'ISO/IEC' | 'EN' | 'NEN' | 'NEN-EN-ISO' | 'Codelijst' | 'Overig';
+export type NormType = 'ISO' | 'ISO/IEC' | 'EN' | 'NEN' | 'NEN-EN-ISO' | 'NPR' | 'NTA' | 'Codelijst' | 'Overig';
 export type RelatieType = 'verwijst_naar' | 'neemt_over' | 'gebaseerd_op' | 'vervangt';
 
 export interface Domein {
