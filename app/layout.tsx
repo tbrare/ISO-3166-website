@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'iso3166.nl – Waar wordt ISO 3166 gebruikt?',
+  title: 'ISO 3166 Landencodes – Waar wordt ISO 3166 gebruikt?',
   description:
     'Register van internationale, Europese en Nederlandse normen en codelijsten die de landencodes van ISO 3166 gebruiken.',
 };
