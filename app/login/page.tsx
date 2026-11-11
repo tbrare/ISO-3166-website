@@ -1,7 +1,7 @@
 import SiteKop from '@/components/SiteKop';
 import InlogFormulier from '@/components/InlogFormulier';
 
-export const metadata = { title: 'Inloggen – iso3166.nl' };
+export const metadata = { title: 'Inloggen – ISO 3166 Landencodes' };
 
 export default function LoginPagina() {
   return (
