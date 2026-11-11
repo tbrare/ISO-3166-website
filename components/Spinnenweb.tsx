@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { NIVEAU_KLEUR } from '@/lib/labels';
-import { berekenWeb, DOMEIN_B, MIDDEN, ondertitel, WEB_B, WEB_H } from '@/lib/web-layout';
+import { berekenWeb, DOMEIN_B, ondertitel, WEB_B } from '@/lib/web-layout';
 import type { Domein, Norm, Relatie } from '@/lib/types';
 
 interface Props {
@@ -28,7 +28,7 @@ export default function Spinnenweb({
   onKies,
   onKiesDomein,
 }: Props) {
-  const { domeinKnopen, knopen, takken } = useMemo(
+  const { domeinKnopen, knopen, takken, hoogte, midden } = useMemo(
     () => berekenWeb(domeinen, normen, relaties),
     [domeinen, normen, relaties]
   );
@@ -44,19 +44,19 @@ export default function Spinnenweb({
   const takDomeinVan = useMemo(() => new Map(knopen.map((k) => [k.sleutel, k.takDomein])), [knopen]);
 
   return (
-    <div className="web">
-      <svg viewBox={`0 0 ${WEB_B} ${WEB_H}`} role="img" aria-label="Spinnenweb: ISO 3166 in het midden, daaromheen de domeinen, per domein de normen die ISO 3166 gebruiken, en normen die daarop voortbouwen in het verlengde">
+    <div className="web" style={{ aspectRatio: `${WEB_B} / ${Math.round(hoogte)}` }}>
+      <svg viewBox={`0 0 ${WEB_B} ${hoogte}`} role="img" aria-label="Netwerkkaart: ISO 3166 in het midden, daaromheen de domeinen, per domein de normen die ISO 3166 gebruiken, en normen die daarop voortbouwen in het verlengde">
         {/* ISO 3166 → domeinen */}
         {domeinKnopen.map((d) => (
           <line
             key={`s-${d.id}`}
-            x1={MIDDEN.x}
-            y1={MIDDEN.y}
+            x1={midden.x}
+            y1={midden.y}
             x2={d.punt.x}
             y2={d.punt.y}
-            stroke="#16202A"
-            strokeWidth={3}
-            opacity={domeinActief(d.id) ? 0.85 : 0.15}
+            stroke="#9AA3AF"
+            strokeWidth={2}
+            opacity={domeinActief(d.id) ? 1 : 0.2}
           />
         ))}
 
@@ -78,7 +78,7 @@ export default function Spinnenweb({
         })}
       </svg>
 
-      <div className="web-midden" aria-hidden="true">
+      <div className="web-midden" aria-hidden="true" style={{ top: `${(midden.y / hoogte) * 100}%` }}>
         <b>ISO 3166</b>
         <span>landencodes</span>
       </div>
@@ -93,7 +93,7 @@ export default function Spinnenweb({
           onClick={() => onKiesDomein(actiefDomein === d.id ? null : d.id)}
           style={{
             left: pct(d.punt.x, WEB_B),
-            top: pct(d.punt.y, WEB_H),
+            top: pct(d.punt.y, hoogte),
             width: pct(DOMEIN_B, WEB_B),
             opacity: domeinActief(d.id) ? 1 : 0.35,
           }}
@@ -117,7 +117,7 @@ export default function Spinnenweb({
             aria-pressed={gekozen}
             aria-label={`${n.code} – ${n.titel}${k.kopie ? ' (verwijzing; hoofddomein elders)' : ''}`}
             onClick={() => onKies(n.id)}
-            style={{ left: pct(k.x, WEB_B), top: pct(k.y, WEB_H), opacity: normActief(n, k.takDomein) ? 1 : 0.15 }}
+            style={{ left: pct(k.x, WEB_B), top: pct(k.y, hoogte), opacity: normActief(n, k.takDomein) ? 1 : 0.15 }}
           >
             <span className={klassen} style={{ borderColor: kleur, background: gekozen ? kleur : '#fff' }} />
             <span className="knoop-label">{n.code}</span>
