@@ -6,7 +6,6 @@ import type { Domein, Niveau, Norm, Relatie } from './types';
  * op elk scherm klopt.
  */
 export const WEB_B = 1200;
-export const WEB_H = 1000;
 const CX = 600;
 const CY = 500;
 
@@ -15,15 +14,17 @@ export const DOMEIN_B = 200;
 const DOMEIN_H = 64;
 /** Straal van de ISO 3166-cirkel in het midden, inclusief rand. */
 const KERN = 66;
-/** Zichtbare lengte van de lijn tussen de ISO 3166-cirkel en elk domeinlabel. */
-const GAT = 170;
+/** Minimale zichtbare lengte van de lijn tussen de ISO 3166-cirkel en elk domeinlabel. */
+const GAT_MIN = 120;
+/** Minimale ruimte tussen twee domeinlabels. */
+const DOMEIN_TUSSENRUIMTE = 18;
 /** Ruimte tussen de buitenrand van een domeinlabel en de eerste normen, en de stap per volgende ring. */
 const RUIMTE_NORM = 90;
 const STAP = 100;
 
 /** Maten van een normlabel (moeten overeenkomen met globals.css). */
 const STIP = 17; // 1.4cqw
-const CODE_LETTER = 8.64; // 1.2cqw × 0.6 (monospace)
+const CODE_LETTER = 8.2; // 1.2cqw × ±0.57 (Source Sans 3, vet)
 const CODE_REGEL = 18.7; // 1.2cqw × 1.3
 const SUB_LETTER = 6.6; // 1.05cqw × ±0.52
 const SUB_REGEL = 16.4; // 1.05cqw × 1.3
@@ -178,7 +179,6 @@ function spreid(dozen: Doos[]) {
     for (const d of dozen) {
       if (d.vast) continue;
       d.x = Math.min(WEB_B - d.b / 2 - 4, Math.max(d.b / 2 + 4, d.x));
-      d.y = Math.min(WEB_H - d.h + d.boven - 4, Math.max(d.boven + 4, d.y));
     }
     if (!bewogen) break;
   }
@@ -231,7 +231,9 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
   const domeinKnopen: DomeinKnoop[] = [];
   const knopen: Knoop[] = [];
   const ophanging = new Map<string, { domein?: DomeinInfo; ouderSleutel?: string }>();
-  const aantal = gesorteerd.length || 1;
+  // Alleen domeinen met minimaal één norm komen in de kaart
+  const zichtbareDomeinen = gesorteerd.filter((d) => normen.some((n) => n.hoofddomein_id === d.id));
+  const aantal = zichtbareDomeinen.length || 1;
   const sector = (2 * Math.PI) / aantal;
 
   const plaats = (groep: Kind[], start: number, breedte: number, diepte: number, ouderSleutel: string | null, domein: DomeinInfo) => {
@@ -251,13 +253,33 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
 
   const vasteDozen: Doos[] = [{ id: '#midden', x: CX, y: CY, b: 2 * KERN, h: 2 * KERN, boven: KERN, vast: true }];
 
-  gesorteerd.forEach((d, i) => {
-    const hoek = -Math.PI / 2 + i * sector;
-    const c = Math.abs(Math.cos(hoek));
-    const s = Math.abs(Math.sin(hoek));
-    const totRand = Math.min(c > 1e-6 ? DOMEIN_B / 2 / c : Infinity, s > 1e-6 ? DOMEIN_H / 2 / s : Infinity);
-    const afstand = KERN + GAT + totRand;
-    const punt = opStraal(hoek, afstand);
+  // Domeinposities: gelijke hoek en gelijke lijnlengte. De lijnlengte groeit tot geen enkel label een ander raakt.
+  const domeinGeometrie = (gat: number) =>
+    zichtbareDomeinen.map((d, i) => {
+      const hoek = -Math.PI / 2 + i * sector;
+      const c = Math.abs(Math.cos(hoek));
+      const s = Math.abs(Math.sin(hoek));
+      const totRand = Math.min(c > 1e-6 ? DOMEIN_B / 2 / c : Infinity, s > 1e-6 ? DOMEIN_H / 2 / s : Infinity);
+      const afstand = KERN + gat + totRand;
+      return { d, hoek, totRand, afstand, punt: opStraal(hoek, afstand) };
+    });
+  const raken = (g: ReturnType<typeof domeinGeometrie>) =>
+    g.some((a, i) =>
+      g.some(
+        (b, j) =>
+          j > i &&
+          Math.abs(a.punt.x - b.punt.x) < DOMEIN_B + DOMEIN_TUSSENRUIMTE &&
+          Math.abs(a.punt.y - b.punt.y) < DOMEIN_H + DOMEIN_TUSSENRUIMTE
+      )
+    );
+  let gat = GAT_MIN;
+  let geometrie = domeinGeometrie(gat);
+  while (raken(geometrie) && gat < 800) {
+    gat += 5;
+    geometrie = domeinGeometrie(gat);
+  }
+
+  for (const { d, hoek, totRand, afstand, punt } of geometrie) {
     const wortels = normen
       .filter((n) => n.hoofddomein_id === d.id && !boomOuder.has(n.id))
       .sort(sorteer)
@@ -266,11 +288,22 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
     vasteDozen.push({ id: `#${d.id}`, x: punt.x, y: punt.y, b: DOMEIN_B, h: DOMEIN_H + 10, boven: DOMEIN_H / 2 + 10, vast: true });
     const bruikbaar = sector * 0.86;
     plaats(wortels, hoek - bruikbaar / 2, bruikbaar, 0, null, { id: d.id, punt, hoek, afstand, straal: afstand + totRand + RUIMTE_NORM });
-  });
+  }
 
   // Overlap wegwerken
   const normDozen: Doos[] = knopen.map((k) => ({ id: k.sleutel, x: k.x, y: k.y, vast: false, ...labelMaat(perId.get(k.normId)!) }));
   spreid([...vasteDozen, ...normDozen]);
+
+  // Hoogte laten meegroeien met de inhoud en alles naar boven schuiven
+  const alle = [...vasteDozen, ...normDozen];
+  const boven = Math.min(...alle.map((d) => d.y - d.boven));
+  const onder = Math.max(...alle.map((d) => d.y - d.boven + d.h));
+  const verschuiving = 24 - boven;
+  const hoogte = Math.max(400, onder - boven + 48);
+  for (const d of normDozen) d.y += verschuiving;
+  for (const k of domeinKnopen) k.punt = { x: k.punt.x, y: k.punt.y + verschuiving };
+  const midden: Punt = { x: CX, y: CY + verschuiving };
+  const domeinPunt = new Map(domeinKnopen.map((k) => [k.id, k.punt]));
   const posities = new Map<string, Punt>();
   normDozen.forEach((d, i) => {
     knopen[i].x = d.x;
@@ -284,8 +317,9 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
     const h = ophanging.get(k.sleutel);
     if (!h) continue;
     if (h.domein) {
-      const c = opStraal(h.domein.hoek, (h.domein.afstand + h.domein.straal) / 2);
-      const v = h.domein.punt;
+      const c0 = opStraal(h.domein.hoek, (h.domein.afstand + h.domein.straal) / 2);
+      const c = { x: c0.x, y: c0.y + verschuiving };
+      const v = domeinPunt.get(h.domein.id) ?? h.domein.punt;
       takken.push({ id: `d-${k.sleutel}`, sleutel: k.sleutel, normId: k.normId, soort: 'domein', kopie: k.kopie, d: `M ${f(v.x)} ${f(v.y)} Q ${f(c.x)} ${f(c.y)} ${f(k.x)} ${f(k.y)}` });
     } else if (h.ouderSleutel) {
       const v = posities.get(h.ouderSleutel);
@@ -294,7 +328,5 @@ export function berekenWeb(domeinen: Domein[], normen: Norm[], relaties: Relatie
     }
   }
 
-  return { domeinKnopen, knopen, takken };
+  return { domeinKnopen, knopen, takken, hoogte, midden };
 }
-
-export const MIDDEN: Punt = { x: CX, y: CY };
