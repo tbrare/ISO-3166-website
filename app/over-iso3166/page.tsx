@@ -68,7 +68,7 @@ export default function OverIso3166() {
           Europese en Nederlandse normen en codelijsten ISO 3166 gebruiken, in welke toepassingsdomeinen, en hoe ze op elkaar voortbouwen.
         </p>
 
-        <h2>Hoe lees je het spinnenweb?</h2>
+        <h2>Hoe lees je de netwerkkaart?</h2>
         <ul>
           <li>In het midden staat ISO 3166. Daaromheen liggen de toepassingsdomeinen, zoals de bancaire sector of persoonsgegevens.</li>
           <li>Vanuit elk domein waaieren de normen uit die ISO 3166 in dat domein gebruiken.</li>
@@ -85,7 +85,7 @@ export default function OverIso3166() {
         <p>Alleen bevestigde gegevens worden getoond.</p>
 
         <p style={{ marginTop: 40 }}>
-          <Link href="/" style={{ fontWeight: 600 }}>Naar het spinnenweb →</Link>
+          <Link href="/" style={{ fontWeight: 600 }}>Naar de netwerkkaart →</Link>
         </p>
       </main>
       <footer className="voet">
