@@ -3,7 +3,7 @@ import DomeinenBeheer from '@/components/beheer/DomeinenBeheer';
 import { haalRegisterOp } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Beheer domeinen – iso3166.nl' };
+export const metadata = { title: 'Beheer domeinen – ISO 3166 Landencodes' };
 
 export default async function DomeinenPagina() {
   const { domeinen, normen } = await haalRegisterOp();
