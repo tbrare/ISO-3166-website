@@ -22,7 +22,13 @@ export const STATUS_LABEL: Record<Status, string> = {
   bevestigd: 'Bevestigd',
 };
 
-export const NORM_TYPES: NormType[] = ['ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO', 'Codelijst', 'Overig'];
+export const NORM_TYPES: NormType[] = ['ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO', 'NPR', 'NTA', 'Codelijst', 'Overig'];
+
+/** Uitleg bij typen die niet voor zich spreken */
+export const NORM_TYPE_UITLEG: Partial<Record<NormType, string>> = {
+  NPR: 'Nederlandse Praktijkrichtlijn',
+  NTA: 'Nederlandse Technische Afspraak',
+};
 export const FORMELE_TYPES: NormType[] = ['ISO', 'ISO/IEC', 'EN', 'NEN', 'NEN-EN-ISO'];
 
 export const RELATIE_TYPES: RelatieType[] = ['verwijst_naar', 'neemt_over', 'gebaseerd_op', 'vervangt'];
