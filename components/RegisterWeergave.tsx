@@ -131,11 +131,8 @@ export default function RegisterWeergave({ domeinen, normen, relaties, taal }: P
                 {huidig.jaar && <span style={{ color: 'var(--tekst-3)' }}>:{huidig.jaar}</span>}
               </p>
               <h3>{volledigeTitel(huidig)}</h3>
-              <div className="beleid">
-                <p className="klein" style={{ margin: 0 }}>{t.waaromBeleid}</p>
-                <p>{huidig.beleidsrelevantie || t.nietBeschreven}</p>
-              </div>
               <dl className="kenmerken">
+                {huidig.toepassing && <div><dt>{t.toepassing}</dt><dd>{huidig.toepassing}</dd></div>}
                 {huidig.afkorting && <div><dt>{t.afkorting}</dt><dd>{huidig.afkorting}</dd></div>}
                 {huidig.jaar && <div><dt>{t.jaartal}</dt><dd>{huidig.jaar}</dd></div>}
                 <div><dt>{t.domeinen}</dt><dd>{domeinenVan(huidig)}</dd></div>
@@ -169,7 +166,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties, taal }: P
                 <summary>{t.technisch}</summary>
                 <dl className="kenmerken">
                   <div><dt>{t.type}</dt><dd>{t.typeUitleg[huidig.type] ? `${huidig.type} (${t.typeUitleg[huidig.type]})` : huidig.type}</dd></div>
-                  <div><dt>{t.gebruiktDeel}</dt><dd className="mono">{huidig.iso3166_delen.join(', ') || '—'}</dd></div>
                   {huidig.gebruikt_iso3166 && (
                     <div>
                       <dt>{t.verwijzingenIso}</dt>
@@ -189,15 +185,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties, taal }: P
                       </dd>
                     </div>
                   )}
-                  <div><dt>{t.waarInNorm}</dt><dd>{huidig.element || '—'}</dd></div>
-                  <div>
-                    <dt>{t.bron}</dt>
-                    <dd>
-                      {huidig.bron ? (
-                        /^https?:\/\//.test(huidig.bron) ? <a href={huidig.bron} target="_blank" rel="noopener noreferrer">{huidig.bron}</a> : huidig.bron
-                      ) : '—'}
-                    </dd>
-                  </div>
                 </dl>
               </details>
             </>
