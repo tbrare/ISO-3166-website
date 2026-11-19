@@ -138,8 +138,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties, taal }: P
               <dl className="kenmerken">
                 {huidig.afkorting && <div><dt>{t.afkorting}</dt><dd>{huidig.afkorting}</dd></div>}
                 {huidig.jaar && <div><dt>{t.jaartal}</dt><dd>{huidig.jaar}</dd></div>}
-                <div><dt>{t.toepassing}</dt><dd>{huidig.toepassing}</dd></div>
-                <div><dt>{t.organisaties}</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
                 <div><dt>{t.domeinen}</dt><dd>{domeinenVan(huidig)}</dd></div>
                 <div>
                   <dt>{t.gebruikIso}</dt>
@@ -192,8 +190,6 @@ export default function RegisterWeergave({ domeinen, normen, relaties, taal }: P
                     </div>
                   )}
                   <div><dt>{t.waarInNorm}</dt><dd>{huidig.element || '—'}</dd></div>
-                  <div><dt>{t.afwijkingen}</dt><dd>{huidig.afwijkingen || '—'}</dd></div>
-                  <div><dt>{t.editie}</dt><dd>{huidig.iso3166_editie || '—'}</dd></div>
                   <div>
                     <dt>{t.bron}</dt>
                     <dd>
