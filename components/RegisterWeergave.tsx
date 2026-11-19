@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Spinnenweb from './Spinnenweb';
-import { NIVEAU_KLEUR, NIVEAU_LABEL, NORM_TYPE_UITLEG, RELATIE_LABEL, RELATIE_LABEL_OMGEKEERD } from '@/lib/labels';
+import { NIVEAU_KLEUR } from '@/lib/labels';
+import { TEKSTEN, type Taal } from '@/lib/i18n';
 import { volledigeTitel, type Domein, type Niveau, type Norm, type Relatie } from '@/lib/types';
 
 type NiveauFilter = 'alle' | Niveau;
@@ -12,9 +13,11 @@ interface Props {
   domeinen: Domein[];
   normen: Norm[];
   relaties: Relatie[];
+  taal: Taal;
 }
 
-export default function RegisterWeergave({ domeinen, normen, relaties }: Props) {
+export default function RegisterWeergave({ domeinen, normen, relaties, taal }: Props) {
+  const t = TEKSTEN[taal];
   const [geselecteerd, setGeselecteerd] = useState<string | null>(normen[0]?.id ?? null);
   const [niveau, setNiveau] = useState<NiveauFilter>('alle');
   const [soort, setSoort] = useState<SoortFilter>('alle');
@@ -54,46 +57,39 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
   return (
     <>
       <section className="sectie intro" style={{ paddingTop: 48 }}>
-        <p className="bovenregel">ISO 3166 · landencodes in de praktijk</p>
-        <h1>Waar wordt ISO 3166 gebruikt?</h1>
-        <p className="lead">
-          Landencodes lijken een detail, maar betalingsverkeer, reisdocumenten, e-facturatie en basisregistraties zijn ervan
-          afhankelijk. Dit register laat zien welke normen en codelijsten ISO 3166 gebruiken, welke organisaties ermee werken
-          en hoe die normen naar elkaar verwijzen.
-        </p>
+        <p className="bovenregel">{t.bovenregel}</p>
+        <h1>{t.kop}</h1>
+        <p className="lead">{t.intro}</p>
         <div className="cijfers">
-          <div className="cijfer"><b>{normen.length}</b><span>normen en codelijsten</span></div>
-          <div className="cijfer"><b>{organisaties.size}</b><span>organisaties</span></div>
-          <div className="cijfer"><b>{relaties.length}</b><span>directe relaties tussen normen</span></div>
-          <div className="cijfer"><b>{domeinen.filter((d) => normen.some((n) => n.hoofddomein_id === d.id)).length}</b><span>toepassingsdomeinen</span></div>
+          <div className="cijfer"><b>{normen.length}</b><span>{t.cijferNormen}</span></div>
+          <div className="cijfer"><b>{organisaties.size}</b><span>{t.cijferOrganisaties}</span></div>
+          <div className="cijfer"><b>{relaties.length}</b><span>{t.cijferRelaties}</span></div>
+          <div className="cijfer"><b>{domeinen.filter((d) => normen.some((n) => n.hoofddomein_id === d.id)).length}</b><span>{t.cijferDomeinen}</span></div>
         </div>
       </section>
 
       <section id="web" className="sectie web-rij">
         <div className="kaart web-kaart">
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 22 }}>Netwerkkaart</h2>
+            <h2 style={{ margin: 0, fontSize: 22 }}>{t.kaartTitel}</h2>
           </div>
           <div className="filters">
-            <div className="chipgroep" role="group" aria-label="Filter op niveau">
+            <div className="chipgroep" role="group" aria-label={t.filterNiveau}>
               {(['alle', 'internationaal', 'europees', 'nationaal'] as NiveauFilter[]).map((k) => (
                 <button key={k} type="button" className="chip" aria-pressed={niveau === k} onClick={() => setNiveau(k)}>
-                  {k === 'alle' ? 'Alle niveaus' : NIVEAU_LABEL[k]}
+                  {k === 'alle' ? t.alleNiveaus : t.niveau[k]}
                 </button>
               ))}
             </div>
-            <div className="chipgroep" role="group" aria-label="Filter op soort">
-              {([['alle', 'Alle soorten'], ['formeel', 'Formele normen'], ['informeel', 'Informeel']] as [SoortFilter, string][]).map(([k, l]) => (
+            <div className="chipgroep" role="group" aria-label={t.filterSoort}>
+              {([['alle', t.alleSoorten], ['formeel', t.formeleNormen], ['informeel', t.informeel]] as [SoortFilter, string][]).map(([k, l]) => (
                 <button key={k} type="button" className="chip" aria-pressed={soort === k} onClick={() => setSoort(k)}>
                   {l}
                 </button>
               ))}
             </div>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>
-            Vanuit ISO 3166 vertakt het web naar de toepassingsdomeinen, en vanuit elk domein naar de normen die er gebruik van maken. Klik
-            op een domein om alleen die waaier te tonen, of op een norm voor details. Een norm die naar een andere norm verwijst, ligt in het verlengde daarvan.
-          </p>
+          <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--tekst-3)' }}>{t.kaartUitleg}</p>
           <Spinnenweb
             domeinen={domeinen}
             normen={normen}
@@ -103,22 +99,23 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
             onKiesDomein={setActiefDomein}
             zichtbaar={zichtbaar}
             onKies={kies}
+            teksten={t}
           />
           {actiefDomein && (
             <p style={{ margin: '8px 0 0', fontSize: 14 }}>
-              Alleen domein <b>{domeinNaam[actiefDomein]}</b>.{' '}
-              <button type="button" className="knop klein" onClick={() => setActiefDomein(null)}>Toon alle domeinen</button>
+              {t.alleenDomein} <b>{domeinNaam[actiefDomein]}</b>.{' '}
+              <button type="button" className="knop klein" onClick={() => setActiefDomein(null)}>{t.toonAlleDomeinen}</button>
             </p>
           )}
           <div className="legenda">
-            <span><i style={{ background: NIVEAU_KLEUR.internationaal }} />Internationaal</span>
-            <span><i style={{ background: NIVEAU_KLEUR.europees }} />Europees</span>
-            <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />Nationaal</span>
-            <span><i style={{ border: '3px solid #4B5563' }} />Formele norm</span>
-            <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />Informeel (NPR, NTA, codelijst, standaard)</span>
-            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />Lijn tussen normen: de buitenste norm verwijst naar of bouwt voort op de binnenste</span>
-            <span><i style={{ border: '3px dashed #4B5563' }} />Gebruikt ISO 3166 indirect, via een andere norm</span>
-            <span><b className="mono" style={{ fontSize: 11, outline: '1px dashed #8A94A3', outlineOffset: 1, padding: '0 4px' }}>CODE</b>Herhaald als verwijzing (hoofddomein elders)</span>
+            <span><i style={{ background: NIVEAU_KLEUR.internationaal }} />{t.niveau.internationaal}</span>
+            <span><i style={{ background: NIVEAU_KLEUR.europees }} />{t.niveau.europees}</span>
+            <span><i style={{ background: NIVEAU_KLEUR.nationaal }} />{t.niveau.nationaal}</span>
+            <span><i style={{ border: '3px solid #4B5563' }} />{t.legFormeel}</span>
+            <span><i style={{ border: '3px solid #4B5563', borderRadius: 3 }} />{t.legInformeel}</span>
+            <span><i style={{ width: 22, height: 0, borderRadius: 0, borderTop: '2px solid #4B5563' }} />{t.legLijn}</span>
+            <span><i style={{ border: '3px dashed #4B5563' }} />{t.legIndirect}</span>
+            <span><b className="mono" style={{ fontSize: 11, outline: '1px dashed #8A94A3', outlineOffset: 1, padding: '0 4px' }}>CODE</b>{t.legKopie}</span>
           </div>
         </div>
 
@@ -126,8 +123,8 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
           {huidig ? (
             <>
               <div className="labels">
-                <span className="label" style={{ background: NIVEAU_KLEUR[huidig.niveau], color: '#fff' }}>{NIVEAU_LABEL[huidig.niveau]}</span>
-                <span className="label">{huidig.formeel ? 'Formele norm' : 'Informeel'}</span>
+                <span className="label" style={{ background: NIVEAU_KLEUR[huidig.niveau], color: '#fff' }}>{t.niveau[huidig.niveau]}</span>
+                <span className="label">{huidig.formeel ? t.formeleNorm : t.informeel}</span>
               </div>
               <p className="detail-code">
                 {huidig.code}
@@ -135,33 +132,33 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
               </p>
               <h3>{volledigeTitel(huidig)}</h3>
               <div className="beleid">
-                <p className="klein" style={{ margin: 0 }}>Waarom relevant voor beleid</p>
-                <p>{huidig.beleidsrelevantie || 'Nog niet beschreven.'}</p>
+                <p className="klein" style={{ margin: 0 }}>{t.waaromBeleid}</p>
+                <p>{huidig.beleidsrelevantie || t.nietBeschreven}</p>
               </div>
               <dl className="kenmerken">
-                {huidig.afkorting && <div><dt>Afkorting</dt><dd>{huidig.afkorting}</dd></div>}
-                {huidig.jaar && <div><dt>Jaartal (editie)</dt><dd>{huidig.jaar}</dd></div>}
-                <div><dt>Toepassing</dt><dd>{huidig.toepassing}</dd></div>
-                <div><dt>Organisaties</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
-                <div><dt>Domeinen</dt><dd>{domeinenVan(huidig)}</dd></div>
+                {huidig.afkorting && <div><dt>{t.afkorting}</dt><dd>{huidig.afkorting}</dd></div>}
+                {huidig.jaar && <div><dt>{t.jaartal}</dt><dd>{huidig.jaar}</dd></div>}
+                <div><dt>{t.toepassing}</dt><dd>{huidig.toepassing}</dd></div>
+                <div><dt>{t.organisaties}</dt><dd>{huidig.organisaties.join(', ') || '—'}</dd></div>
+                <div><dt>{t.domeinen}</dt><dd>{domeinenVan(huidig)}</dd></div>
                 <div>
-                  <dt>Gebruik van ISO 3166</dt>
+                  <dt>{t.gebruikIso}</dt>
                   <dd>
                     {huidig.gebruikt_iso3166
-                      ? 'Direct: de norm verwijst zelf naar ISO 3166'
-                      : `Indirect${huidigeRelaties.some((x) => x.uit) ? `, via ${huidigeRelaties.filter((x) => x.uit).map((x) => x.ander.code).join(', ')}` : ''}`}
+                      ? t.direct
+                      : `${t.indirect}${huidigeRelaties.some((x) => x.uit) ? `, ${t.via} ${huidigeRelaties.filter((x) => x.uit).map((x) => x.ander.code).join(', ')}` : ''}`}
                   </dd>
                 </div>
                 <div>
-                  <dt>Directe relaties</dt>
+                  <dt>{t.directeRelaties}</dt>
                   <dd>
                     {huidigeRelaties.length === 0 ? (
-                      <span style={{ color: 'var(--tekst-3)' }}>Geen directe relaties vastgelegd</span>
+                      <span style={{ color: 'var(--tekst-3)' }}>{t.geenRelaties}</span>
                     ) : (
                       <ul className="relaties-lijst">
                         {huidigeRelaties.map(({ r, uit, ander }) => (
                           <li key={r.id}>
-                            <span style={{ color: 'var(--paars)' }}>{uit ? RELATIE_LABEL[r.type] : RELATIE_LABEL_OMGEKEERD[r.type]}</span>
+                            <span style={{ color: 'var(--paars)' }}>{uit ? t.relatie[r.type] : t.relatieOmgekeerd[r.type]}</span>
                             <button type="button" className="relatie-knop" onClick={() => kies(ander.id)}>{ander.code}</button>
                           </li>
                         ))}
@@ -171,13 +168,13 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                 </div>
               </dl>
               <details className="techniek">
-                <summary>Technische details</summary>
+                <summary>{t.technisch}</summary>
                 <dl className="kenmerken">
-                  <div><dt>Type</dt><dd>{NORM_TYPE_UITLEG[huidig.type] ? `${huidig.type} (${NORM_TYPE_UITLEG[huidig.type]})` : huidig.type}</dd></div>
-                  <div><dt>Gebruikt deel van ISO 3166</dt><dd className="mono">{huidig.iso3166_delen.join(', ') || '—'}</dd></div>
+                  <div><dt>{t.type}</dt><dd>{t.typeUitleg[huidig.type] ? `${huidig.type} (${t.typeUitleg[huidig.type]})` : huidig.type}</dd></div>
+                  <div><dt>{t.gebruiktDeel}</dt><dd className="mono">{huidig.iso3166_delen.join(', ') || '—'}</dd></div>
                   {huidig.gebruikt_iso3166 && (
                     <div>
-                      <dt>Verwijzingen naar ISO 3166</dt>
+                      <dt>{t.verwijzingenIso}</dt>
                       <dd>
                         {huidig.verwijzingen.length === 0 ? (
                           '—'
@@ -194,11 +191,11 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
                       </dd>
                     </div>
                   )}
-                  <div><dt>Waar in de norm</dt><dd>{huidig.element || '—'}</dd></div>
-                  <div><dt>Afwijkingen van ISO 3166</dt><dd>{huidig.afwijkingen || '—'}</dd></div>
-                  <div><dt>Verwijst naar editie</dt><dd>{huidig.iso3166_editie || '—'}</dd></div>
+                  <div><dt>{t.waarInNorm}</dt><dd>{huidig.element || '—'}</dd></div>
+                  <div><dt>{t.afwijkingen}</dt><dd>{huidig.afwijkingen || '—'}</dd></div>
+                  <div><dt>{t.editie}</dt><dd>{huidig.iso3166_editie || '—'}</dd></div>
                   <div>
-                    <dt>Bron</dt>
+                    <dt>{t.bron}</dt>
                     <dd>
                       {huidig.bron ? (
                         /^https?:\/\//.test(huidig.bron) ? <a href={huidig.bron} target="_blank" rel="noopener noreferrer">{huidig.bron}</a> : huidig.bron
@@ -209,7 +206,7 @@ export default function RegisterWeergave({ domeinen, normen, relaties }: Props) 
               </details>
             </>
           ) : (
-            <p>Er zijn nog geen normen gepubliceerd.</p>
+            <p>{t.geenNormen}</p>
           )}
         </aside>
       </section>
