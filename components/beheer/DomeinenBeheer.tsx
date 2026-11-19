@@ -17,6 +17,10 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
   const [conceptOmschrijving, setConceptOmschrijving] = useState('');
   const [nieuwNaam, setNieuwNaam] = useState('');
   const [nieuwOmschrijving, setNieuwOmschrijving] = useState('');
+  const [conceptNaamEn, setConceptNaamEn] = useState('');
+  const [conceptOmschrijvingEn, setConceptOmschrijvingEn] = useState('');
+  const [nieuwNaamEn, setNieuwNaamEn] = useState('');
+  const [nieuwOmschrijvingEn, setNieuwOmschrijvingEn] = useState('');
   const [melding, setMelding] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
 
@@ -58,7 +62,15 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
     const supabase = maakBrowserClient();
     const gelukt = await uitvoeren(
       async () =>
-        supabase.from('domeinen').update({ naam: conceptNaam.trim(), omschrijving: conceptOmschrijving.trim() || null }).eq('id', d.id),
+        supabase
+          .from('domeinen')
+          .update({
+            naam: conceptNaam.trim(),
+            omschrijving: conceptOmschrijving.trim() || null,
+            naam_en: conceptNaamEn.trim() || null,
+            omschrijving_en: conceptOmschrijvingEn.trim() || null,
+          })
+          .eq('id', d.id),
       (code) => (code === '23505' ? 'Er bestaat al een domein met deze naam.' : null)
     );
     if (gelukt) setBewerkId(null);
@@ -83,12 +95,20 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
     const supabase = maakBrowserClient();
     const volgorde = gesorteerd.length > 0 ? Math.max(...gesorteerd.map((d) => d.volgorde)) + 1 : 1;
     const gelukt = await uitvoeren(
-      async () => supabase.from('domeinen').insert({ naam: nieuwNaam.trim(), omschrijving: nieuwOmschrijving.trim() || null, volgorde }),
+      async () => supabase.from('domeinen').insert({
+          naam: nieuwNaam.trim(),
+          omschrijving: nieuwOmschrijving.trim() || null,
+          naam_en: nieuwNaamEn.trim() || null,
+          omschrijving_en: nieuwOmschrijvingEn.trim() || null,
+          volgorde,
+        }),
       (code) => (code === '23505' ? 'Er bestaat al een domein met deze naam.' : null)
     );
     if (gelukt) {
       setNieuwNaam('');
       setNieuwOmschrijving('');
+      setNieuwNaamEn('');
+      setNieuwOmschrijvingEn('');
     }
   }
 
@@ -114,6 +134,14 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
                   <label htmlFor={`oms-${d.id}`}>Omschrijving</label>
                   <input id={`oms-${d.id}`} type="text" value={conceptOmschrijving} onChange={(e) => setConceptOmschrijving(e.target.value)} />
                 </div>
+                <div className="veld">
+                  <label htmlFor={`naam-en-${d.id}`}>Naam (Engels)</label>
+                  <input id={`naam-en-${d.id}`} type="text" lang="en" value={conceptNaamEn} onChange={(e) => setConceptNaamEn(e.target.value)} />
+                </div>
+                <div className="veld" style={{ flex: '2 1 320px' }}>
+                  <label htmlFor={`oms-en-${d.id}`}>Omschrijving (Engels)</label>
+                  <input id={`oms-en-${d.id}`} type="text" lang="en" value={conceptOmschrijvingEn} onChange={(e) => setConceptOmschrijvingEn(e.target.value)} />
+                </div>
                 <button type="button" className="knop primair" disabled={bezig} onClick={() => opslaan(d)}>Opslaan</button>
                 <button type="button" className="knop" onClick={() => setBewerkId(null)}>Annuleren</button>
               </div>
@@ -121,7 +149,10 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
                 <span className="mono" style={{ fontSize: 13, color: 'var(--tekst-3)', width: 24 }}>{i + 1}</span>
                 <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 600 }}>{d.naam}</div>
+                  <div style={{ fontSize: 17, fontWeight: 600 }}>
+                    {d.naam}
+                    <span style={{ fontWeight: 400, fontSize: 14, color: 'var(--tekst-3)' }}> · EN: {d.naam_en || '— (nog niet vertaald)'}</span>
+                  </div>
                   <div style={{ fontSize: 14, color: 'var(--tekst-3)' }}>{d.omschrijving || '—'}</div>
                 </div>
                 <span className="label nowrap">{aantallen[d.id] ?? 0} normen</span>
@@ -136,6 +167,8 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
                       setBewerkId(d.id);
                       setConceptNaam(d.naam);
                       setConceptOmschrijving(d.omschrijving ?? '');
+                      setConceptNaamEn(d.naam_en ?? '');
+                      setConceptOmschrijvingEn(d.omschrijving_en ?? '');
                     }}
                   >
                     Wijzigen
@@ -158,6 +191,14 @@ export default function DomeinenBeheer({ domeinen, aantallen }: Props) {
           <div className="veld" style={{ flex: '2 1 320px' }}>
             <label htmlFor="nieuwomschr">Omschrijving</label>
             <input id="nieuwomschr" type="text" value={nieuwOmschrijving} onChange={(e) => setNieuwOmschrijving(e.target.value)} placeholder="Korte uitleg voor bezoekers" />
+          </div>
+          <div className="veld">
+            <label htmlFor="nieuwnaam-en">Naam (Engels)</label>
+            <input id="nieuwnaam-en" type="text" lang="en" value={nieuwNaamEn} onChange={(e) => setNieuwNaamEn(e.target.value)} placeholder="e.g. Healthcare" />
+          </div>
+          <div className="veld" style={{ flex: '2 1 320px' }}>
+            <label htmlFor="nieuwomschr-en">Omschrijving (Engels)</label>
+            <input id="nieuwomschr-en" type="text" lang="en" value={nieuwOmschrijvingEn} onChange={(e) => setNieuwOmschrijvingEn(e.target.value)} />
           </div>
           <button type="submit" className="knop primair" disabled={bezig}>Toevoegen</button>
         </div>
