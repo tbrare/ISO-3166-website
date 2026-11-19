@@ -43,6 +43,10 @@ interface Formulier {
   extra_domein_ids: string[];
   toepassing: string;
   beleidsrelevantie: string;
+  titel_en: string;
+  specificatie_en: string;
+  toepassing_en: string;
+  beleidsrelevantie_en: string;
   gebruikt_iso3166: boolean;
   iso3166_delen: string[];
   element: string;
@@ -68,6 +72,10 @@ function leegFormulier(domeinen: Domein[]): Formulier {
     extra_domein_ids: [],
     toepassing: '',
     beleidsrelevantie: '',
+    titel_en: '',
+    specificatie_en: '',
+    toepassing_en: '',
+    beleidsrelevantie_en: '',
     gebruikt_iso3166: true,
     iso3166_delen: [],
     element: '',
@@ -94,6 +102,10 @@ function vanNorm(n: Norm, relaties: Relatie[]): Formulier {
     extra_domein_ids: n.extra_domein_ids,
     toepassing: n.toepassing,
     beleidsrelevantie: n.beleidsrelevantie ?? '',
+    titel_en: n.titel_en ?? '',
+    specificatie_en: n.specificatie_en ?? '',
+    toepassing_en: n.toepassing_en ?? '',
+    beleidsrelevantie_en: n.beleidsrelevantie_en ?? '',
     gebruikt_iso3166: n.gebruikt_iso3166,
     iso3166_delen: n.iso3166_delen,
     element: n.element ?? '',
@@ -189,6 +201,10 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
       hoofddomein_id: f.hoofddomein_id || null,
       toepassing: f.toepassing.trim(),
       beleidsrelevantie: leegNaarNull(f.beleidsrelevantie),
+      titel_en: leegNaarNull(f.titel_en),
+      specificatie_en: leegNaarNull(f.specificatie_en),
+      toepassing_en: leegNaarNull(f.toepassing_en),
+      beleidsrelevantie_en: leegNaarNull(f.beleidsrelevantie_en),
       gebruikt_iso3166: f.gebruikt_iso3166,
       iso3166_delen: f.iso3166_delen,
       element: leegNaarNull(f.element),
@@ -490,7 +506,30 @@ export default function NormenBeheer({ domeinen, normen, relaties }: Props) {
             + Relatie toevoegen
           </button>
 
-          <h2 className="blok-titel">5 · Bron en status</h2>
+          <h2 className="blok-titel">5 · Engelse vertaling</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--tekst-3)' }}>
+            Voor de Engelstalige site. Laat een veld leeg om daar de Nederlandse tekst te tonen.
+          </p>
+          <div className="raster">
+            <div className="veld breed">
+              <label htmlFor="titel_en">Titel (Engels)</label>
+              <input id="titel_en" type="text" lang="en" value={f.titel_en} onChange={(e) => zet('titel_en', e.target.value)} placeholder={f.titel || 'Alleen nodig als de titel hierboven Nederlands is'} />
+            </div>
+            <div className="veld breed">
+              <label htmlFor="specificatie_en">Specificatie op titel (Engels)</label>
+              <input id="specificatie_en" type="text" lang="en" value={f.specificatie_en} onChange={(e) => zet('specificatie_en', e.target.value)} placeholder={f.specificatie || ''} />
+            </div>
+            <div className="veld breed">
+              <label htmlFor="toepassing_en">Toepassing (Engels)</label>
+              <textarea id="toepassing_en" rows={2} lang="en" value={f.toepassing_en} onChange={(e) => zet('toepassing_en', e.target.value)} placeholder="e.g. General personal data: nationality and country of birth" />
+            </div>
+            <div className="veld breed">
+              <label htmlFor="beleid_en">Waarom relevant voor beleid (Engels)</label>
+              <textarea id="beleid_en" rows={2} lang="en" value={f.beleidsrelevantie_en} onChange={(e) => zet('beleidsrelevantie_en', e.target.value)} placeholder="One or two sentences for policy makers" />
+            </div>
+          </div>
+
+          <h2 className="blok-titel">6 · Bron en status</h2>
           <div className="raster">
             <div className="veld">
               <label htmlFor="bron">Bron (URL of documentverwijzing)</label>
