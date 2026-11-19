@@ -1,26 +1,30 @@
 import SiteKop from '@/components/SiteKop';
+import SiteVoet from '@/components/SiteVoet';
 import RegisterWeergave from '@/components/RegisterWeergave';
 import { haalRegisterOp } from '@/lib/data';
+import { TEKSTEN } from '@/lib/i18n';
+import { huidigeTaal } from '@/lib/taal-server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const { domeinen, normen, relaties, fout } = await haalRegisterOp({ alleenBevestigd: true });
+  const taal = await huidigeTaal();
+  const t = TEKSTEN[taal];
+  const { domeinen, normen, relaties, fout } = await haalRegisterOp({ alleenBevestigd: true, taal });
 
   return (
     <>
-      <SiteKop actief="web" />
+      <SiteKop actief="web" taal={taal} />
       {fout && (
         <div className="sectie">
-          <p className="foutmelding" role="alert">De gegevens konden niet worden geladen: {fout}</p>
+          <p className="foutmelding" role="alert">{t.laadFout} {fout}</p>
         </div>
       )}
       <main>
-        <RegisterWeergave domeinen={domeinen} normen={normen} relaties={relaties} />
+        {/* key: bij een taalwissel opnieuw opbouwen met de vertaalde gegevens */}
+        <RegisterWeergave key={taal} domeinen={domeinen} normen={normen} relaties={relaties} taal={taal} />
       </main>
-      <footer className="voet">
-        iso3166.nl · <a href="/over-iso3166">Over ISO 3166</a> · Open data: <a href="/api/normen">/api/normen</a> (JSON)
-      </footer>
+      <SiteVoet taal={taal} />
     </>
   );
 }
