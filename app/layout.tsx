@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { TEKSTEN } from '@/lib/i18n';
+import { huidigeTaal } from '@/lib/taal-server';
 
-export const metadata: Metadata = {
-  title: 'ISO 3166 Landencodes – Waar wordt ISO 3166 gebruikt?',
-  description:
-    'Register van internationale, Europese en Nederlandse normen en codelijsten die de landencodes van ISO 3166 gebruiken.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = TEKSTEN[await huidigeTaal()];
+  return { title: t.metaTitel, description: t.metaOmschrijving };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const taal = await huidigeTaal();
   return (
-    <html lang="nl">
+    <html lang={taal}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
