@@ -8,6 +8,9 @@ export interface Domein {
   naam: string;
   omschrijving: string | null;
   volgorde: number;
+  /** Engelse vertaling (optioneel) */
+  naam_en?: string | null;
+  omschrijving_en?: string | null;
 }
 
 export interface Norm {
@@ -33,6 +36,11 @@ export interface Norm {
   status: Status;
   extra_domein_ids: string[];
   verwijzingen: Iso3166Verwijzing[];
+  /** Engelse vertalingen (optioneel; leeg = Nederlandse tekst) */
+  titel_en?: string | null;
+  specificatie_en?: string | null;
+  toepassing_en?: string | null;
+  beleidsrelevantie_en?: string | null;
 }
 
 export interface Iso3166Verwijzing {
@@ -85,4 +93,23 @@ export function naarNorm(rij: NormRij): Norm {
     extra_domein_ids: (norm_domeinen ?? []).map((d) => d.domein_id),
     verwijzingen: [...(iso3166_verwijzingen ?? [])].sort((a, b) => a.volgorde - b.volgorde),
   };
+}
+
+const gevuld = (v?: string | null) => (v && v.trim() ? v : null);
+
+/** Engelse weergave van een norm: vertaalde velden waar ingevuld, anders de Nederlandse tekst. */
+export function normInTaal(n: Norm, taal: 'nl' | 'en'): Norm {
+  if (taal === 'nl') return n;
+  return {
+    ...n,
+    titel: gevuld(n.titel_en) ?? n.titel,
+    specificatie: gevuld(n.specificatie_en) ?? n.specificatie,
+    toepassing: gevuld(n.toepassing_en) ?? n.toepassing,
+    beleidsrelevantie: gevuld(n.beleidsrelevantie_en) ?? n.beleidsrelevantie,
+  };
+}
+
+export function domeinInTaal(d: Domein, taal: 'nl' | 'en'): Domein {
+  if (taal === 'nl') return d;
+  return { ...d, naam: gevuld(d.naam_en) ?? d.naam, omschrijving: gevuld(d.omschrijving_en) ?? d.omschrijving };
 }
