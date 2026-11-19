@@ -1,11 +1,20 @@
 import Link from 'next/link';
+import TaalKnop from './TaalKnop';
+import { TEKSTEN, type Taal } from '@/lib/i18n';
 
-export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; actief?: 'normen' | 'domeinen' | 'web' | 'over' }) {
+interface Props {
+  beheer?: boolean;
+  actief?: 'normen' | 'domeinen' | 'web' | 'over';
+  taal?: Taal;
+}
+
+export default function SiteKop({ beheer = false, actief, taal = 'nl' }: Props) {
+  const t = TEKSTEN[taal];
   return (
     <header className="kop">
       <div className="kop-binnen">
         <Link href="/" className="logo">
-          <span className="logo-naam">ISO 3166 Landencodes</span>
+          <span className="logo-naam">{beheer ? TEKSTEN.nl.siteNaam : t.siteNaam}</span>
           {beheer && <span className="logo-sub">Beheer</span>}
         </Link>
         {beheer ? (
@@ -22,15 +31,17 @@ export default function SiteKop({ beheer = false, actief }: { beheer?: boolean; 
             </form>
           </nav>
         ) : (
-          <nav className="menu publiek" aria-label="Hoofdmenu">
-            <Link href="/" className={actief === 'web' ? 'actief' : undefined} aria-current={actief === 'web' ? 'page' : undefined}>
-              Netwerkkaart
-            </Link>
-            <Link href="/over-iso3166" className={actief === 'over' ? 'actief' : undefined} aria-current={actief === 'over' ? 'page' : undefined}>
-              Over ISO 3166
-            </Link>
-            <Link href="/beheer" className="knop-licht">Beheer</Link>
-          </nav>
+          <div className="kop-rechts">
+            <nav className="menu publiek" aria-label={t.hoofdmenu}>
+              <Link href="/" className={actief === 'web' ? 'actief' : undefined} aria-current={actief === 'web' ? 'page' : undefined}>
+                {t.menuKaart}
+              </Link>
+              <Link href="/over-iso3166" className={actief === 'over' ? 'actief' : undefined} aria-current={actief === 'over' ? 'page' : undefined}>
+                {t.menuOver}
+              </Link>
+            </nav>
+            <TaalKnop taal={taal} label={t.taalKeuze} />
+          </div>
         )}
       </div>
     </header>
